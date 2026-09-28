@@ -72,6 +72,8 @@ public class UserService {
         existente.setCurrentBuilding(resolveCurrentBuilding(user.getCurrentBuilding()));
         existente.setLocationUpdatedAt(user.getLocationUpdatedAt());
 
+        existente.setPreferredEffort(user.getPreferredEffort());
+
         log.info("Termina proceso de actualización del usuario con id = {}", id);
         return userRepository.save(existente);
     }
