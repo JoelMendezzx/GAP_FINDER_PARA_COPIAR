@@ -3,8 +3,12 @@ package com.backend.gapfinder.models;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.backend.gapfinder.enums.EffortTypeEnum;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -54,4 +58,9 @@ public class UserModel {
     // Last time the current location was updated
     @Column(name = "location_updated_at", nullable = true)
     private LocalDateTime locationUpdatedAt;
+
+    // Preferred effort level for activities (used in match scoring)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "preferred_effort", nullable = true)
+    private EffortTypeEnum preferredEffort;
 }
