@@ -27,6 +27,13 @@ public interface OpenTableRepository extends JpaRepository<OpenTableModel, Long>
         """)
     List<OpenTableModel> findMatchingOpenTables(@Param("userId") Long userId,
                                                 @Param("buildingId") Long buildingId,
+                 
+                 
                                                 @Param("status") OpenTableStatusEnum status,
                                                 @Param("now") LocalDateTime now);
+
+
+
+    // Count the open tables created at or after the given date
+    long countByCreatedAtGreaterThanEqual(LocalDateTime since);
 }
