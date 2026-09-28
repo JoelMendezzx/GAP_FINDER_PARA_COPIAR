@@ -1,4 +1,4 @@
-package com.backend.gapfinder.dto.response;
+package com.backend.gapfinder.dto.responses;
 
 // Respuesta al hacer login o registro exitoso
 public record AuthResponse(

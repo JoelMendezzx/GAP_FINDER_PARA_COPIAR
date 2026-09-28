@@ -20,7 +20,6 @@ import lombok.Data;
 
 @Entity
 @Data
-
 public class UserModel {
 
     // Unique user identifier
@@ -33,6 +32,14 @@ public class UserModel {
     @Column(nullable = false)
     private String name;
 
+    // Institutional email, used as the login identifier (stored lowercase)
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    // BCrypt hash of the password (the plain password is never stored)
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
+
     // Contact phone number
     @Column(name = "phone_number", nullable = true)
     private String phoneNumber;
@@ -40,6 +47,22 @@ public class UserModel {
     // Academic program or major
     @Column(nullable = false)
     private String career;
+
+    // Current semester the student is enrolled in
+    @Column(nullable = true)
+    private Integer semester;
+
+    // URL of the profile picture (null until the user uploads one)
+    @Column(name = "avatar_url", nullable = true)
+    private String avatarUrl;
+
+    // Whether the account has been verified (e.g. by email confirmation)
+    @Column(nullable = false)
+    private boolean verified = false;
+
+    // Date and time the account was created
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     // List of student's personal interests
     @ManyToMany

@@ -3,7 +3,7 @@ package com.backend.gapfinder.services;
 import com.backend.gapfinder.dto.request.LoginRequest;
 import com.backend.gapfinder.dto.request.RefreshRequest;
 import com.backend.gapfinder.dto.request.RegisterRequest;
-import com.backend.gapfinder.dto.response.AuthResponse;
+import com.backend.gapfinder.dto.responses.AuthResponse;
 import com.backend.gapfinder.models.RefreshTokenModel;
 import com.backend.gapfinder.models.UserModel;
 import com.backend.gapfinder.repositories.UserRepository;
@@ -40,21 +40,28 @@ public class AuthService {
             throw new IllegalArgumentException("Ya existe una cuenta con ese correo");
         }
 
+        // Antes de crear el usuario: normaliza el correo y úsalo también en la validación
+        String email = request.email().toLowerCase().trim();
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Ya existe una cuenta con ese correo");
+        }
+
         UserModel user = new UserModel();
         user.setName(request.name());
-        user.setEmail(request.email().toLowerCase().trim());
+        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setProgram(request.program());
+        user.setCareer(request.career());
         user.setSemester(request.semester());
-        user.setActivityEffortPreference(request.activityEffortPreference());
+        user.setPhoneNumber(request.phoneNumber());
+        user.setPreferredEffort(request.preferredEffort());
         user.setAvatarUrl(null);
         user.setVerified(false);
         user.setCreatedAt(LocalDateTime.now());
 
-        userRepository.save(user);
+            userRepository.save(user);
 
-        return buildAuthResponse(user);
-    }
+            return buildAuthResponse(user);
+        }
 
     // Valida credenciales y devuelve los tokens de sesión
     @Transactional

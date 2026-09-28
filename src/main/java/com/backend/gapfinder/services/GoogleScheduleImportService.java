@@ -1,7 +1,7 @@
 package com.backend.gapfinder.services;
 
 import com.backend.gapfinder.dto.ClassBlockBasicDTO;
-import com.backend.gapfinder.dto.response.GoogleImportResult;
+import com.backend.gapfinder.dto.responses.GoogleImportResult;
 import com.backend.gapfinder.exceptions.DuplicateClassBlockException;
 import com.backend.gapfinder.mapper.GoogleEventMapper;
 import com.backend.gapfinder.models.ClassBlockModel;
@@ -10,30 +10,32 @@ import com.google.api.services.calendar.model.Event;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+// Imports the user's weekly schedule from Google Calendar and recalculates their gaps
 @Slf4j
 @Service
 public class GoogleScheduleImportService {
 
-    private final CalendarProvider calendarProvider;
+    private final GoogleCalendarService googleCalendarService;
     private final ClassBlockService classBlockService;
-    private final GapService gapService; // 👈 nueva dependencia
+    private final WeeklyGapService weeklyGapService;
 
-    public GoogleScheduleImportService(CalendarProvider calendarProvider,
+    public GoogleScheduleImportService(GoogleCalendarService googleCalendarService,
                                        ClassBlockService classBlockService,
-                                       GapService gapService) {
-        this.calendarProvider = calendarProvider;
+                                       WeeklyGapService weeklyGapService) {
+        this.googleCalendarService = googleCalendarService;
         this.classBlockService = classBlockService;
-        this.gapService = gapService;
+        this.weeklyGapService = weeklyGapService;
     }
 
     public GoogleImportResult importSchedule(Long userId) throws Exception {
         log.info("Inicia importación del horario de Google Calendar para el usuario {}", userId);
 
-        List<Event> events = calendarProvider.getEvents(userId);
+        List<Event> events = googleCalendarService.getEvents(userId);
         List<ClassBlockBasicDTO> created = new ArrayList<>();
         int omitidos = 0;
 
@@ -52,8 +54,10 @@ public class GoogleScheduleImportService {
             }
         }
 
-        // 👇 recalcular gaps para hoy (o para cada día distinto que haya en los eventos importados)
-        gapService.calculateGapsFromSchedule(userId, LocalDate.now());
+        // Google Calendar imports the current Monday-Saturday window (see GoogleCalendarService.getEvents),
+        // so the gaps are recalculated for that same week
+        LocalDate weekStart = LocalDate.now().with(DayOfWeek.MONDAY);
+        weeklyGapService.generateWeekGaps(userId, weekStart);
 
         log.info("Importación terminada para el usuario {}: {} creados, {} omitidos",
                 userId, created.size(), omitidos);

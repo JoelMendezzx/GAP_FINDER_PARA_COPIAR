@@ -1,6 +1,6 @@
 package com.backend.gapfinder.controllers;
 
-import com.backend.gapfinder.dto.response.GoogleImportResult;
+import com.backend.gapfinder.dto.responses.GoogleImportResult;
 import com.backend.gapfinder.models.UserModel;
 import com.backend.gapfinder.services.GoogleScheduleImportService;
 
