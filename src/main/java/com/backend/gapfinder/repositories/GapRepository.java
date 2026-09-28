@@ -48,4 +48,6 @@ public interface GapRepository extends JpaRepository<GapModel, Long> {
         GROUP BY per_gap.duration_range
         """, nativeQuery = true)
     List<Object[]> findCoverageByDurationBucket();
+
+
     }
