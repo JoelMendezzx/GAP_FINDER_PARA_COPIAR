@@ -60,4 +60,8 @@ public class OpenTableModel {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OpenTableStatusEnum status;
+
+    // Date and time when the open table was created
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 }

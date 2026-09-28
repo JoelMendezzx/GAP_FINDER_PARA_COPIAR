@@ -56,6 +56,7 @@ public class OpenTableService {
         openTable.setId(null);
         openTable.setCreator(creator);
         openTable.setBuilding(building);
+        openTable.setCreatedAt(LocalDateTime.now());
 
         log.info("Termina proceso de creación de una open table con título = {}", openTable.getTitle());
         return openTableRepository.save(openTable);
