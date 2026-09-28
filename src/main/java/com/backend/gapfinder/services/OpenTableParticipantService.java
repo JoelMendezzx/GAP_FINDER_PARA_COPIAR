@@ -1,5 +1,7 @@
 package com.backend.gapfinder.services;
 
+import com.backend.gapfinder.enums.NotificationTypeEnum;
+import com.backend.gapfinder.events.OpenTableEvent;
 import com.backend.gapfinder.exceptions.NotFoundException;
 import com.backend.gapfinder.models.OpenTableModel;
 import com.backend.gapfinder.models.OpenTableParticipantModel;
@@ -7,6 +9,7 @@ import com.backend.gapfinder.models.UserModel;
 import com.backend.gapfinder.repositories.OpenTableParticipantRepository;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,18 +23,24 @@ public class OpenTableParticipantService {
     private final OpenTableParticipantRepository openTableParticipantRepository;
     private final UserService userService;
     private final OpenTableService openTableService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public OpenTableParticipantService(OpenTableParticipantRepository openTableParticipantRepository,
-                                        UserService userService, OpenTableService openTableService) {
+    public OpenTableParticipantService(
+            OpenTableParticipantRepository openTableParticipantRepository,
+            UserService userService,
+            OpenTableService openTableService,
+            ApplicationEventPublisher eventPublisher) {
         this.openTableParticipantRepository = openTableParticipantRepository;
         this.userService = userService;
         this.openTableService = openTableService;
+        this.eventPublisher = eventPublisher;
     }
 
     // Get a participant record by its id
     @Transactional
     public OpenTableParticipantModel getById(Long id) {
         log.info("Inicia proceso de consultar el participante con id = {}", id);
+
         return openTableParticipantRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("El participante con id " + id + " no existe"));
     }
@@ -54,7 +63,9 @@ public class OpenTableParticipantService {
         UserModel user = userService.getById(participant.getUser().getId());
 
         boolean yaExiste = openTableParticipantRepository.existsByOpenTableIdAndUserId(
-                openTable.getId(), user.getId());
+                openTable.getId(),
+                user.getId());
+
         if (yaExiste) {
             throw new IllegalArgumentException("El usuario ya está registrado en esta open table");
         }
@@ -64,8 +75,21 @@ public class OpenTableParticipantService {
         participant.setUser(user);
         participant.setJoinedAt(LocalDateTime.now());
 
+        OpenTableParticipantModel saved = openTableParticipantRepository.save(participant);
+
+        // Notify the creator when another user joins the open table
+        if (!openTable.getCreator().getId().equals(user.getId())) {
+            eventPublisher.publishEvent(new OpenTableEvent(
+                    NotificationTypeEnum.OPEN_TABLE_JOINED,
+                    openTable.getCreator().getId(),
+                    user.getName(),
+                    openTable.getId(),
+                    openTable.getTitle()));
+        }
+
         log.info("Termina proceso de creación de un registro de participante");
-        return openTableParticipantRepository.save(participant);
+
+        return saved;
     }
 
     // Update the data from an existing participant record
@@ -74,6 +98,7 @@ public class OpenTableParticipantService {
         log.info("Inicia proceso de actualización del participante con id = {}", id);
 
         OpenTableParticipantModel existente = getById(id);
+
         validateParticipantData(participant);
 
         OpenTableModel openTable = openTableService.getById(participant.getOpenTable().getId());
@@ -83,6 +108,7 @@ public class OpenTableParticipantService {
         existente.setUser(user);
 
         log.info("Termina proceso de actualización del participante con id = {}", id);
+
         return openTableParticipantRepository.save(existente);
     }
 
@@ -92,6 +118,7 @@ public class OpenTableParticipantService {
         log.info("Inicia proceso de eliminación del participante con id = {}", id);
 
         OpenTableParticipantModel existente = getById(id);
+
         openTableParticipantRepository.delete(existente);
 
         log.info("Termina proceso de eliminación del participante con id = {}", id);

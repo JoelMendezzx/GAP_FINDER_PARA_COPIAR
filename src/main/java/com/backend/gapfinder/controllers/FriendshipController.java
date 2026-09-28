@@ -75,4 +75,26 @@ public class FriendshipController {
     public void deleteFriendship(@PathVariable Long id) {
         friendshipService.delete(id);
     }
+
+        // Accept a pending friend request
+    // PATCH /friendships/57/accept?userId=400
+    @PatchMapping("/{id}/accept")
+    public FriendshipBasicDTO acceptFriendship(
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+
+        FriendshipModel friendship = friendshipService.acceptFriendship(id, userId);
+        return modelMapper.map(friendship, FriendshipBasicDTO.class);
+    }
+
+    // Reject a pending friend request
+    // PATCH /friendships/57/reject?userId=400
+    @PatchMapping("/{id}/reject")
+    public FriendshipBasicDTO rejectFriendship(
+            @PathVariable Long id,
+            @RequestParam Long userId) {
+
+        FriendshipModel friendship = friendshipService.rejectFriendship(id, userId);
+        return modelMapper.map(friendship, FriendshipBasicDTO.class);
+    }
 }
