@@ -63,5 +63,4 @@ public class UserModel {
     @Enumerated(EnumType.STRING)
     @Column(name = "preferred_effort", nullable = true)
     private EffortTypeEnum preferredEffort;
-
 }
