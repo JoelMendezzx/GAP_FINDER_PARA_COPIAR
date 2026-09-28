@@ -48,4 +48,15 @@ public interface GapRepository extends JpaRepository<GapModel, Long> {
         GROUP BY per_gap.duration_range
         """, nativeQuery = true)
     List<Object[]> findCoverageByDurationBucket();
+
+    // Gaps of a user that start inside the given range [from, to)
+    @Query("SELECT g FROM GapModel g WHERE g.user.id = :userId " +
+           "AND g.startTime >= :from AND g.startTime < :to")
+    List<GapModel> findByUserAndStartBetween(
+            @Param("userId") Long userId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
+
+
     }

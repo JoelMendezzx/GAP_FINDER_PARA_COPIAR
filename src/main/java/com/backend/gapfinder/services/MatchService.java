@@ -3,6 +3,8 @@ package com.backend.gapfinder.services;
 import com.backend.gapfinder.dto.GapBasicDTO;
 import com.backend.gapfinder.dto.responses.MatchCandidateResponseDTO;
 import com.backend.gapfinder.enums.MatchStatusEnum;
+import com.backend.gapfinder.enums.NotificationTypeEnum;
+import com.backend.gapfinder.events.MatchEvent;
 import com.backend.gapfinder.exceptions.NotFoundException;
 import com.backend.gapfinder.models.GapModel;
 import com.backend.gapfinder.models.MatchModel;
@@ -16,6 +18,7 @@ import com.backend.gapfinder.strategies.SharedInterestStrategy;
 import lombok.extern.slf4j.Slf4j;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,10 +39,12 @@ public class MatchService {
     private final SharedInterestStrategy sharedInterestStrategy;
     private final EffortStrategy effortStrategy;
     private final ModelMapper modelMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     public MatchService(MatchRepository matchRepository, GapRepository gapRepository, GapService gapService,
                          OverlapStrategy overlapStrategy, SameCareerStrategy sameCareerStrategy,
-                         SharedInterestStrategy sharedInterestStrategy, EffortStrategy effortStrategy, ModelMapper modelMapper) {
+                         SharedInterestStrategy sharedInterestStrategy, EffortStrategy effortStrategy,
+                         ModelMapper modelMapper, ApplicationEventPublisher eventPublisher) {
         this.matchRepository = matchRepository;
         this.gapRepository = gapRepository;
         this.gapService = gapService;
@@ -48,6 +53,7 @@ public class MatchService {
         this.sharedInterestStrategy = sharedInterestStrategy;
         this.effortStrategy = effortStrategy;
         this.modelMapper = modelMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     // Get a match by its id
@@ -185,6 +191,7 @@ public class MatchService {
     }
 
     // Send a match request between two gaps, using a score already calculated (e.g. from findCandidates)
+    // and notify the owner of the acceptor gap
     @Transactional
     public MatchModel sendMatchRequest(Long proposerGapId, Long acceptorGapId, Double score) {
         log.info("Inicia proceso de envío de solicitud de match entre gaps {} y {}", proposerGapId, acceptorGapId);
@@ -221,11 +228,17 @@ public class MatchService {
 
         MatchModel saved = matchRepository.save(match);
 
+        eventPublisher.publishEvent(new MatchEvent(
+                NotificationTypeEnum.MATCH_PROPOSED,
+                acceptorGap.getUser().getId(),
+                proposerGap.getUser().getName(),
+                saved.getId()));
+
         log.info("Termina proceso de envío de solicitud de match con id = {}", saved.getId());
         return saved;
     }
 
-    // Accept a pending match request
+    // Accept a pending match request and notify the proposer
     @Transactional
     public MatchModel acceptMatch(Long matchId, Long userId) {
         log.info("Inicia proceso de aceptación del match con id = {} por el usuario = {}", matchId, userId);
@@ -237,11 +250,17 @@ public class MatchService {
         match.setStatus(MatchStatusEnum.ACCEPTED);
         MatchModel saved = matchRepository.save(match);
 
+        eventPublisher.publishEvent(new MatchEvent(
+                NotificationTypeEnum.MATCH_ACCEPTED,
+                saved.getProposerGap().getUser().getId(),
+                saved.getAcceptorGap().getUser().getName(),
+                saved.getId()));
+
         log.info("Termina proceso de aceptación del match con id = {}", matchId);
         return saved;
     }
 
-    // Reject a pending match request
+    // Reject a pending match request and notify the proposer
     @Transactional
     public MatchModel rejectMatch(Long matchId, Long userId) {
         log.info("Inicia proceso de rechazo del match con id = {} por el usuario = {}", matchId, userId);
@@ -252,6 +271,12 @@ public class MatchService {
 
         match.setStatus(MatchStatusEnum.REJECTED);
         MatchModel saved = matchRepository.save(match);
+
+        eventPublisher.publishEvent(new MatchEvent(
+                NotificationTypeEnum.MATCH_REJECTED,
+                saved.getProposerGap().getUser().getId(),
+                saved.getAcceptorGap().getUser().getName(),
+                saved.getId()));
 
         log.info("Termina proceso de rechazo del match con id = {}", matchId);
         return saved;

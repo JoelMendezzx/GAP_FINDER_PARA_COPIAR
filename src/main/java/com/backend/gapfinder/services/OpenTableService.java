@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -55,6 +56,7 @@ public class OpenTableService {
         openTable.setId(null);
         openTable.setCreator(creator);
         openTable.setBuilding(building);
+        openTable.setCreatedAt(LocalDateTime.now());
 
         log.info("Termina proceso de creación de una open table con título = {}", openTable.getTitle());
         return openTableRepository.save(openTable);
@@ -124,5 +126,16 @@ public class OpenTableService {
         if (openTable.getStatus() == null) {
             throw new IllegalArgumentException("Debe indicar el estado de la open table (status)");
         }
+    }
+
+    // Count the open tables created since the given date (used for the abandonment statistics)
+    @Transactional(readOnly = true)
+    public long countCreatedSince(LocalDateTime since) {
+        log.info("Inicia proceso de contar las open tables creadas desde {}", since);
+
+        long count = openTableRepository.countByCreatedAtGreaterThanEqual(since);
+
+        log.info("Termina proceso de contar las open tables creadas desde {}", since);
+        return count;
     }
 }

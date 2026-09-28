@@ -8,7 +8,7 @@ public enum MatchStatusEnum {
     // Match accepted by both students, waiting for meeting
     ACCEPTED,
 
-    // Match rejected by the recipient or cancelled
+    // Match rejected by the recipient
     REJECTED,
 
     // Match successfully completed after the meeting time

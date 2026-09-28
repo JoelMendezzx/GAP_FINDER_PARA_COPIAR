@@ -10,4 +10,7 @@ public interface MatchRepository extends JpaRepository<MatchModel, Long> {
 
     // Get all matches with a given status (used to auto-complete expired ones)
     List<MatchModel> findByStatus(MatchStatusEnum status);
+
+    // Check if a gap is used by any match, as proposer or acceptor
+    boolean existsByProposerGapIdOrAcceptorGapId(Long proposerGapId, Long acceptorGapId);
 }
