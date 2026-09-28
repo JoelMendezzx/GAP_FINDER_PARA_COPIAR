@@ -15,9 +15,9 @@ public class RecommendationController {
         this.recommendationService = recommendationService;
     }
 
-    // Get open tables recommended in the user's favorite building that match one of their gaps
-    // GET /recommendations/open-tables/{userId}
-    @GetMapping("/open-tables/{userId}")
+    // Get open tables recommended for a user, based on their favorite building and active gaps
+    // GET /recommendations/user/{userId}/open-tables
+    @GetMapping("/user/{userId}/open-tables")
     public OpenTableRecommendationResponseDTO recommendOpenTables(@PathVariable Long userId) {
         return recommendationService.recommendOpenTables(userId);
     }
