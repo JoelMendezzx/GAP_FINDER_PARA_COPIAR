@@ -48,7 +48,7 @@ public interface UserLocationLogRepository extends JpaRepository<UserLocationLog
                     EXTRACT(EPOCH FROM (
                         LEAD(l."timestamp") OVER (PARTITION BY l.user_id ORDER BY l."timestamp")
                         - l."timestamp")) / 60.0,
-                    30) AS minutes
+                    15) AS minutes
             FROM user_location_log l
             WHERE l.user_id = :userId
         ) t

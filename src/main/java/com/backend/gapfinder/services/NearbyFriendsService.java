@@ -11,7 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+// Handles the context-aware feature: current building of the user and friends nearby
+// Smart Feature
 @Slf4j
 @Service
 public class NearbyFriendsService {
@@ -25,6 +28,7 @@ public class NearbyFriendsService {
     private final UserLocationLogService locationLogService;
     private final FriendshipService friendshipService;
 
+    // Dependency injection constructor
     public NearbyFriendsService(UserService userService,
                                 UserRepository userRepository,
                                 BuildingService buildingService,
@@ -37,7 +41,31 @@ public class NearbyFriendsService {
         this.friendshipService = friendshipService;
     }
 
-    // Updates the user's current building, logs the change and returns friends in the same building
+    // Resolves the building from GPS coordinates, updates the user's context and returns friends nearby
+    @Transactional
+    public List<UserModel> updateLocationByCoordinates(Long userId, double latitude, double longitude) {
+        log.info("Inicia proceso de actualizar ubicación del usuario {} por coordenadas", userId);
+
+        Optional<BuildingModel> building = buildingService.findBuildingContainingUser(latitude, longitude);
+
+        if (building.isEmpty()) {
+            // User is outside every building: clear the current context
+            UserModel user = userService.getById(userId);
+            user.setCurrentBuilding(null);
+            user.setLocationUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
+
+            log.info("El usuario {} no está dentro de ningún edificio", userId);
+            return List.of();
+        }
+
+        List<UserModel> nearby = updateLocationAndGetNearbyFriends(userId, building.get().getId());
+
+        log.info("Termina proceso de actualizar ubicación del usuario {} por coordenadas", userId);
+        return nearby;
+    }
+
+    // Updates the user's current building, logs the location and returns friends in the same building
     @Transactional
     public List<UserModel> updateLocationAndGetNearbyFriends(Long userId, Long buildingId) {
         log.info("Inicia proceso de actualizar ubicación del usuario {} al edificio {}", userId, buildingId);
@@ -45,21 +73,16 @@ public class NearbyFriendsService {
         UserModel user = userService.getById(userId);
         BuildingModel building = buildingService.getById(buildingId);
 
-        boolean buildingChanged = user.getCurrentBuilding() == null
-                || !user.getCurrentBuilding().getId().equals(buildingId);
-
         // Fast context state
         user.setCurrentBuilding(building);
         user.setLocationUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        // History for analytics, only when the building actually changes
-        if (buildingChanged) {
-            UserLocationLogModel locationLog = new UserLocationLogModel();
-            locationLog.setUser(user);
-            locationLog.setBuilding(building);
-            locationLogService.create(locationLog);
-        }
+        // History for analytics: one log per location update, sent by the app while a gap is active
+        UserLocationLogModel locationLog = new UserLocationLogModel();
+        locationLog.setUser(user);
+        locationLog.setBuilding(building);
+        locationLogService.create(locationLog);
 
         List<UserModel> nearby = findNearbyFriends(userId, buildingId);
 
@@ -70,13 +93,18 @@ public class NearbyFriendsService {
     // Returns the accepted friends currently in the user's current building
     @Transactional(readOnly = true)
     public List<UserModel> getNearbyFriends(Long userId) {
+        log.info("Inicia proceso de consultar los amigos cercanos del usuario {}", userId);
+
         UserModel user = userService.getById(userId);
 
         if (user.getCurrentBuilding() == null) {
             return List.of();
         }
 
-        return findNearbyFriends(userId, user.getCurrentBuilding().getId());
+        List<UserModel> nearby = findNearbyFriends(userId, user.getCurrentBuilding().getId());
+
+        log.info("Termina proceso de consultar los amigos cercanos del usuario {}", userId);
+        return nearby;
     }
 
     // Filters the user's accepted friends by building and recent location update

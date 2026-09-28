@@ -12,27 +12,24 @@ import org.springframework.data.repository.query.Param;
 
 public interface OpenTableRepository extends JpaRepository<OpenTableModel, Long> {
 
-    // Finds OPEN tables in a building that overlap with any gap of the user and have not ended yet
+    // Finds OPEN tables in a building that overlap with a gap of the user that has not ended yet
     // SMART FEATURE
     @Query("""
         SELECT DISTINCT o
         FROM OpenTableModel o, GapModel g
         WHERE o.building.id = :buildingId
-        AND o.status = :status
-        AND o.endTime > :now
-        AND g.user.id = :userId
-        AND o.startTime < g.endTime
-        AND o.endTime > g.startTime
+          AND o.status = :status
+          AND o.endTime > :now
+          AND g.user.id = :userId
+          AND g.endTime > :now
+          AND o.startTime < g.endTime
+          AND o.endTime > g.startTime
         ORDER BY o.startTime
         """)
     List<OpenTableModel> findMatchingOpenTables(@Param("userId") Long userId,
                                                 @Param("buildingId") Long buildingId,
-                 
-                 
                                                 @Param("status") OpenTableStatusEnum status,
                                                 @Param("now") LocalDateTime now);
-
-
 
     // Count the open tables created at or after the given date
     long countByCreatedAtGreaterThanEqual(LocalDateTime since);

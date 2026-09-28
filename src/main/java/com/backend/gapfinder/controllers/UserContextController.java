@@ -22,7 +22,19 @@ public class UserContextController {
         this.modelMapper = modelMapper;
     }
 
-    // Update the user's current building and get friends already there
+    // Update the user's location from GPS coordinates and get friends in the same building
+    // PATCH /users/{userId}/location/gps?latitude=4.6015&longitude=-74.0660
+    @PatchMapping("/{userId}/location/gps")
+    public List<UserBasicDTO> updateLocationByGps(
+            @PathVariable Long userId,
+            @RequestParam double latitude,
+            @RequestParam double longitude) {
+
+        List<UserModel> friends = nearbyFriendsService.updateLocationByCoordinates(userId, latitude, longitude);
+        return modelMapper.map(friends, new TypeToken<List<UserBasicDTO>>() {}.getType());
+    }
+
+    // Update the user's current building and get friends already there (useful for testing without GPS)
     // PATCH /users/{userId}/location?buildingId=3
     @PatchMapping("/{userId}/location")
     public List<UserBasicDTO> updateLocation(
