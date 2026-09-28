@@ -2,11 +2,14 @@ package com.backend.gapfinder.repositories;
 
 import com.backend.gapfinder.models.UserLocationLogModel;
 import com.backend.gapfinder.repositories.projections.BuildingGapPresenceProjection;
+import com.backend.gapfinder.repositories.projections.FavoriteBuildingProjection;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface UserLocationLogRepository extends JpaRepository<UserLocationLogModel, Long> {
 
@@ -32,5 +35,29 @@ public interface UserLocationLogRepository extends JpaRepository<UserLocationLog
         ORDER BY studentCount DESC, totalGapMinutes DESC
         """, nativeQuery = true)
     List<BuildingGapPresenceProjection> findGapPresenceByBuilding();
+
+    // Calculates the building where the user has accumulated the most time based on consecutive location logs
+    // SMART-FEATURE
+    @Query(value = """
+        SELECT b.id AS buildingId,
+            b.name AS buildingName,
+            SUM(t.minutes) AS totalMinutes
+        FROM (
+            SELECT l.building_id,
+                LEAST(
+                    EXTRACT(EPOCH FROM (
+                        LEAD(l."timestamp") OVER (PARTITION BY l.user_id ORDER BY l."timestamp")
+                        - l."timestamp")) / 60.0,
+                    30) AS minutes
+            FROM user_location_log l
+            WHERE l.user_id = :userId
+        ) t
+        JOIN building b ON b.id = t.building_id
+        WHERE t.minutes IS NOT NULL
+        GROUP BY b.id, b.name
+        ORDER BY totalMinutes DESC
+        LIMIT 1
+        """, nativeQuery = true)
+    Optional<FavoriteBuildingProjection> findFavoriteBuilding(@Param("userId") Long userId);
 
 }
