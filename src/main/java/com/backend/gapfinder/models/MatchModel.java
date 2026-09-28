@@ -13,18 +13,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
+@Table(name = "matches")
 @Data
 
-public class MatchModel {
-
-    // Unique match identifier
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
+public class MatchModel extends BaseModel {
 
     // Free time slot of the user who initiated the match
     @ManyToOne

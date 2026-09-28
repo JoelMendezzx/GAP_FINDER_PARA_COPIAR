@@ -10,18 +10,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
+@Table(name = "buildings")
 @Data
 
-public class BuildingModel {
+public class BuildingModel extends BaseModel {
 
-    // Unique building identifier
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
+  
 
     // Name of the campus building (e.g., Library, Engineering, Cafeteria)
     @Column(nullable = false, unique = true)

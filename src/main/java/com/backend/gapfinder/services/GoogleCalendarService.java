@@ -25,7 +25,7 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class GoogleCalendarService implements CalendarProvider {
+public class GoogleCalendarService {
 
     private final GoogleCredentialRepository googleCredentialRepository;
     private final GoogleAuthorizationCodeFlow flow;
@@ -68,7 +68,6 @@ public class GoogleCalendarService implements CalendarProvider {
     }
 
         // Trae ocurrencias individuales de una semana del calendario primario del usuario
-    @Override
     public List<Event> getEvents(Long userId) throws Exception {
         GoogleCredentialModel credential = googleCredentialRepository.findByUserId(userId)
                 .orElseThrow(() -> new NotFoundException(

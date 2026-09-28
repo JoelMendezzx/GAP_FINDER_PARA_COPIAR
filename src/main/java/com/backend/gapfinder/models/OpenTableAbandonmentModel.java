@@ -9,12 +9,9 @@ import lombok.Data;
 @Entity
 @Data
 @Table(name = "open_table_abandonments")
-public class OpenTableAbandonmentModel {
+public class OpenTableAbandonmentModel extends BaseModel {
 
-    // Unique identifier for the abandonment record
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+ 
 
     // User who abandoned the creation flow
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

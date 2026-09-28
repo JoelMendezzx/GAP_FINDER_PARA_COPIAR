@@ -13,19 +13,17 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
+@Table(name = "open_tables")
+
 @Data
 
-public class OpenTableModel {
+public class OpenTableModel extends BaseModel   {
 
-    // Unique open table identifier
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
-
+ 
     // Student who created the open table
     @ManyToOne
     @JoinColumn(name = "creator_id", nullable = false)

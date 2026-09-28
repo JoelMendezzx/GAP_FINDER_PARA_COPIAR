@@ -13,18 +13,20 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
 @Entity
+@Table(
+    name = "friendships",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"requester_id", "receiver_id"})
+)
 @Data
 
-public class FriendshipModel {
+public class FriendshipModel extends BaseModel {
 
-    // Unique friendship record identifier
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
+
 
     // Student who sent the friend request
     @ManyToOne

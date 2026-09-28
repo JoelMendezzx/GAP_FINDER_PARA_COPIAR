@@ -8,11 +8,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "refresh_tokens")
 @Data
-public class RefreshTokenModel {
+public class RefreshTokenModel extends BaseModel {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @Column(unique = true, nullable = false)
     private String token; // UUID opaco, no es un JWT

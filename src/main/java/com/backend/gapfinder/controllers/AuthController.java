@@ -3,7 +3,7 @@ package com.backend.gapfinder.controllers;
 import com.backend.gapfinder.dto.request.LoginRequest;
 import com.backend.gapfinder.dto.request.RefreshRequest;
 import com.backend.gapfinder.dto.request.RegisterRequest;
-import com.backend.gapfinder.dto.response.AuthResponse;
+import com.backend.gapfinder.dto.responses.AuthResponse;
 import com.backend.gapfinder.models.UserModel;
 import com.backend.gapfinder.services.AuthService;
 

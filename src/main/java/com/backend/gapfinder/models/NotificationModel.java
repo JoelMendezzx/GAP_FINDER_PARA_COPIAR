@@ -14,11 +14,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 @Table(name = "notifications")
-public class NotificationModel {
+public class NotificationModel extends BaseModel {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+
 
     // User who receives the notification
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

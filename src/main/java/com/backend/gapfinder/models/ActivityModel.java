@@ -11,17 +11,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
+@Table(name = "activities")
 @Data
-public class ActivityModel {
+public class ActivityModel extends BaseModel {
 
-    // Unique activity identifier
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
 
     // Name of the activity (e.g., Study Session, Coffee Break, Board Game)
     @Column(nullable = false)

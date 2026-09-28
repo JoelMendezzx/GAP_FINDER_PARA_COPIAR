@@ -9,18 +9,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
+@Table(name = "location_logs")
+
 @Data
 
-public class UserLocationLogModel {
+public class UserLocationLogModel extends BaseModel {
 
-    // Unique location log identifier
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false)
-    private Long id;
 
     // Student whose location was logged
     @ManyToOne
