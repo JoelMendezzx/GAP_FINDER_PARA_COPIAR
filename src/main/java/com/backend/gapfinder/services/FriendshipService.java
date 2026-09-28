@@ -106,4 +106,22 @@ public class FriendshipService {
             throw new IllegalArgumentException("Un usuario no puede enviarse solicitud a sí mismo");
         }
     }
+
+
+    // Get all accepted friends from a user
+    @Transactional(readOnly = true)
+    public List<UserModel> getFriendsByUser(Long userId) {
+        log.info("Inicia proceso de consultar los amigos del usuario con id = {}", userId);
+
+        userService.getById(userId);
+
+        List<UserModel> friends = friendshipRepository
+                .findByUserAndStatus(userId, FriendshipStatusEnum.ACCEPTED)
+                .stream()
+                .map(f -> f.getRequester().getId().equals(userId) ? f.getReceiver() : f.getRequester())
+                .toList();
+
+        log.info("Termina proceso de consultar los amigos del usuario con id = {}", userId);
+        return friends;
+    }
 }
