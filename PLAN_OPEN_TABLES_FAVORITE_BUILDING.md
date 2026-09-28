@@ -17,7 +17,7 @@ Open tables recomendadas
  └─────────────────────────────────────┘
 ```
 
-> Este documento es solo planeación. No se ha modificado código del backend ni del front.
+> Este documento es planeación del front. En la rama `weekly-gaps` (creada desde `origin/CLASS-BLOCKS`) ya se resolvieron dos problemas del backend: el `createdAt` de open tables (8.1) y el cálculo automático de gaps (8.3).
 > Complementa a `PLAN_NEARBY_FRIENDS.md` (reutiliza el mismo `ApiClient`, sesión y manejo de errores).
 
 ---
@@ -73,7 +73,7 @@ Consecuencias importantes para el front:
 - Ordenadas por `startTime`.
 
 Consecuencia importante: **si el usuario no tiene gaps futuros o en curso, la lista sale vacía** aunque haya open tables en el edificio.
-Los gaps no se calculan solos: hoy solo se crean con `POST /gaps` (ver sección 8).
+En la rama `weekly-gaps` los gaps se calculan solos a partir del horario (`class-blocks`) cada domingo, así que el usuario solo necesita tener su horario cargado (ver 8.3).
 
 ---
 
@@ -286,10 +286,10 @@ class RecError         extends RecommendedTablesState { final String message; }
 
 ## 8. Problemas encontrados en el backend (revisar antes de conectar)
 
-1. ⚠️ **El backend probablemente no arranca en las 3 ramas más recientes.**
-   `OpenTableRepository` tiene `countByCreatedAtGreaterThanEqual(...)` (lo usa `GET /open-tables/count`), pero `OpenTableModel` **no tiene** campo `createdAt`. Spring Data valida ese método al iniciar y lanza error (`No property 'createdAt' found for type 'OpenTableModel'`).
-   Afecta: `CLASS-BLOCKS`, `PATRON-OBSERVER`, `todos-los-controllers`.
-   → Pedir que agreguen `createdAt` al modelo (o quiten el método). Mientras tanto, `origin/LOCATION-SENSOR-FUNCTIONS` tiene la misma lógica sin este problema, pero con la ruta vieja `/recommendations/open-tables/{userId}`.
+1. ✅ **Resuelto en `weekly-gaps`: el backend no arrancaba en las 3 ramas más recientes.**
+   `OpenTableRepository` tiene `countByCreatedAtGreaterThanEqual(...)` (lo usa `GET /open-tables/count`), pero `OpenTableModel` no tenía campo `createdAt`, y Spring Data falla al iniciar por eso.
+   En `weekly-gaps` se agregó `createdAt` a `OpenTableModel` y se llena al crear la open table.
+   Sigue pasando en: `origin/CLASS-BLOCKS`, `origin/PATRON-OBSERVER`, `origin/todos-los-controllers` (hasta que se una `weekly-gaps`).
 
 2. ⚠️ **Hoy no se puede unirse a una open table desde la API.**
    `POST /open-table-participants` recibe `OpenTableParticipantBasicDTO`, que solo tiene `id` y `joinedAt`. El servicio exige `openTable.id` y `user.id`, así que siempre responde `400 "Debe indicar la open table (openTable)"`.
@@ -298,8 +298,12 @@ class RecError         extends RecommendedTablesState { final String message; }
    **Lo mismo pasa al crear una open table:** `POST /open-tables` recibe `OpenTableBasicDTO` (sin `creator` ni `building`) y el servicio exige ambos → siempre `400 "Debe indicar el usuario creador (creator)"`. Hoy las open tables solo se pueden crear directo en la base de datos.
    → Pedir que el request acepte `creatorId`/`buildingId` (o `OpenTableCompleteDTO` con ids).
 
-3. **Los gaps no se generan solos.** Solo existe `POST /gaps` con `{ "startTime", "endTime", "user": { "id" } }`. No hay nada que calcule los huecos a partir del horario (`/class-blocks`) ni de la importación de Google. Sin gaps futuros la lista siempre sale vacía.
-   → Para probar: crear gaps a mano en Postman. A futuro: calcular gaps desde el horario.
+3. ✅ **Resuelto en `weekly-gaps`: los gaps ahora se generan solos a partir del horario.**
+   - **Cada domingo a las 20:00 (Bogotá)** se calculan los gaps de lunes a sábado de la semana siguiente para todos los usuarios con clases (`WeeklyGapJob`).
+   - **Regla:** un gap es el tiempo libre entre el final de una clase y el inicio de la siguiente, el mismo día, si dura **30 min o más**. Antes de la primera clase y después de la última **no** es gap; un día sin clases no tiene gaps. Franja del día: 06:30–21:30.
+   - **Bajo demanda:** `POST /gaps/user/{userId}/generate-week?weekStart=2026-09-28` (`weekStart` es un lunes y es opcional: por defecto la semana actual, o la siguiente si es domingo). Devuelve los gaps creados.
+   - Recalcular una semana reemplaza sus gaps, pero conserva los que ya tienen un match.
+   → **Para el front:** después de que el usuario cargue o importe su horario (`/class-blocks` o importación de Google), llamar `POST /gaps/user/{userId}/generate-week` para que tenga gaps esa misma semana sin esperar al domingo.
 
 4. **La recomendación no excluye** las open tables que creó el propio usuario ni en las que ya se unió.
    → Opcional en el front: ocultar las que el usuario ya sabe que son suyas (no hay forma de saberlo con el DTO actual). Mejor pedirlo al backend.
@@ -312,7 +316,7 @@ class RecError         extends RecommendedTablesState { final String message; }
 
 ## 9. Cómo probar de punta a punta (Postman)
 
-Con el backend levantado (tras resolver el punto 8.1):
+Con el backend de la rama `weekly-gaps` levantado:
 
 1. Tener un usuario `U` y dos edificios `A` y `B`.
 2. Generar historial de ubicación de `U`, espaciado unos minutos entre llamadas:
@@ -320,7 +324,10 @@ Con el backend levantado (tras resolver el punto 8.1):
    - `PUT /nearby-friends/user/U/building/B` (una vez)
    → `A` debería ser el favorito.
    *(Los minutos se calculan con la hora real de cada llamada; si las haces seguidas, `totalMinutes` será casi 0, pero igual hay favorito.)*
-3. Crear un gap futuro: `POST /gaps` → `{ "startTime": "<hoy 10:00>", "endTime": "<hoy 12:00>", "user": { "id": U } }`.
+3. Generar gaps de `U` desde su horario:
+   - Cargar dos clases el mismo día con un hueco entre ellas, ej. `POST /class-blocks/user/U` → `{ "subject": "Cálculo", "dayOfWeek": "MON", "startTime": "08:00", "endTime": "10:00" }` y otra de `12:00` a `14:00`.
+   - `POST /gaps/user/U/generate-week` → debe crear un gap de 10:00 a 12:00 ese lunes.
+   - Alternativa rápida: `POST /gaps` → `{ "startTime": "<hoy 10:00>", "endTime": "<hoy 12:00>", "user": { "id": U } }`.
 4. Crear una open table `OPEN` en `A` entre 10:30 y 11:30. Por el problema 8.2, hoy hay que insertarla **directo en la base de datos** (tabla `open_table`: `creator_id`, `building_id`, `title`, `start_time`, `end_time`, `max_participants`, `status = 'OPEN'`).
 5. `GET /recommendations/user/U/open-tables` → debe devolver `A` y la open table.
 6. Casos borde: usuario sin logs (sin favorito), sin gaps (lista vacía), open table `FULL` (no aparece), open table ya terminada (no aparece).
@@ -330,8 +337,10 @@ Con el backend levantado (tras resolver el punto 8.1):
 ## 10. Checklist por fases
 
 ### Fase 0: Backend
-- [ ] Traer a tu rama local `origin/CLASS-BLOCKS` (o esperar a que se una con `main`).
-- [ ] Resolver o pedir que resuelvan el `createdAt` (8.1) para que arranque.
+- [ ] Usar la rama `weekly-gaps` (o esperar a que se una con `main`).
+- [x] Resolver el `createdAt` (8.1) para que arranque.
+- [x] Calcular gaps automáticamente desde el horario (8.3).
+- [ ] En el front, llamar `POST /gaps/user/{userId}/generate-week` después de guardar o importar el horario.
 - [ ] Probar el flujo de la sección 9 en Postman.
 - [ ] Pedir que se pueda crear una open table y unirse a una desde la API (8.2).
 
