@@ -18,4 +18,34 @@ public interface GapRepository extends JpaRepository<GapModel, Long> {
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
-}
+
+    // Coverage per gap duration bucket: gap count, total gap minutes, total matched minutes
+    @Query(value = """
+        SELECT per_gap.duration_range,
+            COUNT(*) AS gap_count,
+            SUM(per_gap.gap_minutes) AS total_gap_minutes,
+            SUM(per_gap.covered_minutes) AS total_covered_minutes
+        FROM (
+            SELECT g.id,
+                EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60 AS gap_minutes,
+                LEAST(
+                    COALESCE(SUM(EXTRACT(EPOCH FROM (m.end_time - m.start_time)) / 60), 0),
+                    EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60
+                ) AS covered_minutes,
+                CASE
+                    WHEN EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60 < 30 THEN '<30'
+                    WHEN EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60 < 60 THEN '30-60'
+                    WHEN EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60 < 120 THEN '60-120'
+                    WHEN EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60 < 180 THEN '120-180'
+                    ELSE '180+'
+                END AS duration_range
+            FROM gap_model g
+            LEFT JOIN match_model m
+                ON (m.proposer_gap_id = g.id OR m.acceptor_gap_id = g.id)
+                AND m.status IN ('ACCEPTED', 'COMPLETED')
+            GROUP BY g.id
+        ) per_gap
+        GROUP BY per_gap.duration_range
+        """, nativeQuery = true)
+    List<Object[]> findCoverageByDurationBucket();
+    }
