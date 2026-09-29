@@ -9,6 +9,9 @@ public enum OpenTableCreationStepEnum {
     // User was writing the title/description of the open table
     DESCRIPTION,
 
+    // User was setting the max number of participants
+    PARTICIPANTS,
+
     // User was selecting the building/location of the open table
     LOCATION
 }

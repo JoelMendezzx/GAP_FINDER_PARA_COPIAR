@@ -13,7 +13,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
-// Configuración central de seguridad: qué rutas requieren login y cómo se valida
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -24,7 +23,6 @@ public class SecurityConfig {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
-    // Algoritmo para encriptar contraseñas antes de guardarlas
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -35,19 +33,38 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
+
                 config.setAllowedOrigins(List.of("*"));
-                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+                config.setAllowedMethods(List.of(
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "PATCH",
+                    "DELETE",
+                    "OPTIONS"
+                ));
+
                 config.setAllowedHeaders(List.of("*"));
+
                 return config;
             }))
-            .csrf(csrf -> csrf.disable()) // no se necesita, la API no usa sesiones de navegador
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // sin sesiones, cada petición se autentica con su JWT
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll() // login/registro no requieren estar autenticado
-                .requestMatchers("/google/callback").permitAll() // Google redirige aquí sin el JWT del frontend
-                .anyRequest().authenticated() // todo lo demás sí requiere un JWT válido
+            .csrf(csrf -> csrf.disable())
+
+            .sessionManagement(sm ->
+                sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // revisa el JWT antes del login normal de Spring
+
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/google/callback").permitAll()
+                .anyRequest().authenticated()
+            )
+
+            .addFilterBefore(
+                jwtAuthFilter,
+                UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }

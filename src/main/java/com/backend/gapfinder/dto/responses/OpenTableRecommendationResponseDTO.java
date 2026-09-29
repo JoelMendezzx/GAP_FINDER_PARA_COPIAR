@@ -1,5 +1,6 @@
 package com.backend.gapfinder.dto.responses;
 
+import com.backend.gapfinder.dto.OpenTableCompleteDTO;
 
 import java.util.List;
 
@@ -16,5 +17,5 @@ public record OpenTableRecommendationResponseDTO(
         Double totalMinutes,
 
         // List of active recommended open tables available in that building
-        List openTables
+        List<OpenTableCompleteDTO> openTables
 ) {}

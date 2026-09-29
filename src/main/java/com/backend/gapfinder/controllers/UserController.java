@@ -73,4 +73,13 @@ public class UserController {
         UserModel updated = userService.addInterest(userId, interestId);
         return modelMapper.map(updated, UserBasicDTO.class);
     }
+
+    // Search users by name
+    // GET /users/search?name={name}
+    @GetMapping("/search")
+    public List<UserBasicDTO> searchByName(@RequestParam String name) {
+        List<UserModel> users = userService.searchByName(name);
+        return modelMapper.map(users, new TypeToken<List<UserBasicDTO>>() {}.getType());
+    }
+
 }

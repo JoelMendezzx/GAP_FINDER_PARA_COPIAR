@@ -139,4 +139,16 @@ public class UserService {
 
         return userRepository.save(user);
     }
+
+    // Search users by name
+    @Transactional
+    public List<UserModel> searchByName(String name) {
+        log.info("Inicia proceso de búsqueda de usuarios con nombre = {}", name);
+
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("El texto de búsqueda es obligatorio");
+        }
+
+        return userRepository.findByNameContainingIgnoreCase(name.trim());
+    }
 }

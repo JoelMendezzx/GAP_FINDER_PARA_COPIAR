@@ -24,40 +24,44 @@ public interface UserLocationLogRepository extends JpaRepository<UserLocationLog
             SELECT DISTINCT ON (g.id)
                    g.id, g.user_id, l.building_id,
                    EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60.0 AS gap_minutes
-            FROM gap g
-            JOIN user_location_log l
+            FROM gaps g
+            JOIN location_logs l
               ON l.user_id = g.user_id
              AND l.timestamp BETWEEN g.start_time AND g.end_time
             ORDER BY g.id, l.timestamp DESC
         ) x
-        JOIN building b ON b.id = x.building_id
+        JOIN buildings b ON b.id = x.building_id
         GROUP BY b.id, b.name
         ORDER BY studentCount DESC, totalGapMinutes DESC
         """, nativeQuery = true)
     List<BuildingGapPresenceProjection> findGapPresenceByBuilding();
 
-    // Calculates the building where the user has accumulated the most time based on consecutive location logs
+    // Calculates the building where the user has accumulated the most time during their gaps
     // SMART-FEATURE
     @Query(value = """
         SELECT b.id AS buildingId,
             b.name AS buildingName,
             SUM(t.minutes) AS totalMinutes
         FROM (
-            SELECT l.building_id,
+            SELECT l.building_id, l.user_id, l."timestamp" AS ts,
                 LEAST(
                     EXTRACT(EPOCH FROM (
                         LEAD(l."timestamp") OVER (PARTITION BY l.user_id ORDER BY l."timestamp")
                         - l."timestamp")) / 60.0,
                     15) AS minutes
-            FROM user_location_log l
+            FROM location_logs l
             WHERE l.user_id = :userId
         ) t
-        JOIN building b ON b.id = t.building_id
+        JOIN buildings b ON b.id = t.building_id
         WHERE t.minutes IS NOT NULL
+          AND EXISTS (
+              SELECT 1 FROM gaps g
+              WHERE g.user_id = t.user_id
+                AND t.ts BETWEEN g.start_time AND g.end_time
+          )
         GROUP BY b.id, b.name
         ORDER BY totalMinutes DESC
         LIMIT 1
         """, nativeQuery = true)
     Optional<FavoriteBuildingProjection> findFavoriteBuilding(@Param("userId") Long userId);
-
 }

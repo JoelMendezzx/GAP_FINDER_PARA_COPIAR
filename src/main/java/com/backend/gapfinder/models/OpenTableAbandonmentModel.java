@@ -33,6 +33,9 @@ public class OpenTableAbandonmentModel extends BaseModel {
     // Optional duration configured before abandonment
     private Integer durationMinutes;
 
+    // Optional max participants configured before abandonment
+    private Integer maxParticipants;
+
     // Optional ID of the selected building if reached
     private Long buildingId;
 

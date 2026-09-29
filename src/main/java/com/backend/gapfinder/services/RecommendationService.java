@@ -1,6 +1,6 @@
 package com.backend.gapfinder.services;
 
-import com.backend.gapfinder.dto.OpenTableBasicDTO;
+import com.backend.gapfinder.dto.OpenTableCompleteDTO;
 import com.backend.gapfinder.dto.responses.OpenTableRecommendationResponseDTO;
 import com.backend.gapfinder.enums.OpenTableStatusEnum;
 import com.backend.gapfinder.repositories.OpenTableRepository;
@@ -40,20 +40,20 @@ public class RecommendationService {
     public OpenTableRecommendationResponseDTO recommendOpenTables(Long userId) {
         log.info("Inicia proceso de recomendar open tables para el usuario {}", userId);
 
-        // Retrieve top frequented building metrics for the given user
+        // Retrieve the building where the user spends the most time during their gaps
         Optional<FavoriteBuildingProjection> favorite = locationLogRepository.findFavoriteBuilding(userId);
         if (favorite.isEmpty()) {
-            log.info("El usuario {} no tiene logs de ubicación", userId);
+            log.info("El usuario {} no tiene logs de ubicación dentro de sus gaps", userId);
             return new OpenTableRecommendationResponseDTO(null, null, 0.0, List.of());
         }
 
         FavoriteBuildingProjection f = favorite.get();
 
         // Query active matching open tables and map entities to response DTOs
-        List<OpenTableBasicDTO> tables = openTableRepository
+        List<OpenTableCompleteDTO> tables = openTableRepository
                 .findMatchingOpenTables(userId, f.getBuildingId(), OpenTableStatusEnum.OPEN, LocalDateTime.now())
                 .stream()
-                .map(o -> modelMapper.map(o, OpenTableBasicDTO.class))
+                .map(o -> modelMapper.map(o, OpenTableCompleteDTO.class))
                 .toList();
 
         log.info("Termina proceso de recomendar open tables para el usuario {}", userId);
