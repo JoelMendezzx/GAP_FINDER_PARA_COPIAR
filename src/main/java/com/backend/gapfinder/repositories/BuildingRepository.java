@@ -17,7 +17,7 @@ public interface BuildingRepository extends JpaRepository<BuildingModel, Long> {
     // Finds the closest building whose coverage radius contains the given point
     @Query(value = """
         SELECT b.*
-        FROM building b
+        FROM buildings b
         WHERE ST_DWithin(CAST(b.location AS geography), CAST(:userLocation AS geography), b.radius_meters)
         ORDER BY ST_Distance(CAST(b.location AS geography), CAST(:userLocation AS geography))
         LIMIT 1

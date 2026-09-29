@@ -40,8 +40,8 @@ public interface GapRepository extends JpaRepository<GapModel, Long> {
                     WHEN EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60 < 180 THEN '120-180'
                     ELSE '180+'
                 END AS duration_range
-            FROM gap_model g
-            LEFT JOIN match_model m
+            FROM gaps g
+            LEFT JOIN matches m
                 ON (m.proposer_gap_id = g.id OR m.acceptor_gap_id = g.id)
                 AND m.status IN ('ACCEPTED', 'COMPLETED')
             GROUP BY g.id
