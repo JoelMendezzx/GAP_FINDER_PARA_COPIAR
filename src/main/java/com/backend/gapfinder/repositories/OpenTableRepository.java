@@ -5,6 +5,7 @@ import com.backend.gapfinder.models.OpenTableModel;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -31,6 +32,6 @@ public interface OpenTableRepository extends JpaRepository<OpenTableModel, Long>
                                                 @Param("status") OpenTableStatusEnum status,
                                                 @Param("now") LocalDateTime now);
 
-    // Count the open tables created at or after the given date
+    // Counts the total number of open tables created on or after the specified timestamp.
     long countByCreatedAtGreaterThanEqual(LocalDateTime since);
 }

@@ -8,8 +8,8 @@ import lombok.EqualsAndHashCode;
 public class MatchCompleteDTO extends MatchBasicDTO {
 
     // Free time slot of the user who initiated the match
-    private GapBasicDTO proposerGap;
+    private GapCompleteDTO proposerGap;
 
     // Free time slot of the user who accepted the match
-    private GapBasicDTO acceptorGap;
+    private GapCompleteDTO acceptorGap;
 }

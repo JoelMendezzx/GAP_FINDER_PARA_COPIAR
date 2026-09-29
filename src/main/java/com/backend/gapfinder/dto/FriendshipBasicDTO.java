@@ -6,6 +6,7 @@ import com.backend.gapfinder.enums.FriendshipStatusEnum;
 
 import lombok.Data;
 
+
 @Data
 public class FriendshipBasicDTO {
 
@@ -17,4 +18,10 @@ public class FriendshipBasicDTO {
 
     // Date and time when the friendship request was created
     private LocalDateTime createdAt;
+
+    // Id of the student who sent the request
+    private Long requesterId;
+
+    // Id of the student who received the request
+    private Long receiverId;
 }

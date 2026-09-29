@@ -1,6 +1,7 @@
 package com.backend.gapfinder.controllers;
 
 import com.backend.gapfinder.dto.MatchBasicDTO;
+import com.backend.gapfinder.dto.MatchCompleteDTO;
 import com.backend.gapfinder.dto.responses.MatchCandidateResponseDTO;
 import com.backend.gapfinder.models.MatchModel;
 import com.backend.gapfinder.services.MatchService;
@@ -27,17 +28,17 @@ public class MatchController {
     // Get a match by its id
     // GET /matches/{id}
     @GetMapping("/{id}")
-    public MatchBasicDTO getMatch(@PathVariable Long id) {
+    public MatchCompleteDTO getMatch(@PathVariable Long id) {
         MatchModel match = matchService.getById(id);
-        return modelMapper.map(match, MatchBasicDTO.class);
+        return modelMapper.map(match, MatchCompleteDTO.class);
     }
 
     // Get all matches
     // GET /matches
     @GetMapping
-    public List<MatchBasicDTO> getAll() {
+    public List<MatchCompleteDTO> getAll() {
         List<MatchModel> matches = matchService.getAll();
-        return modelMapper.map(matches, new TypeToken<List<MatchBasicDTO>>() {}.getType());
+        return modelMapper.map(matches, new TypeToken<List<MatchCompleteDTO>>() {}.getType());
     }
 
     // Find scored candidate gaps for a given gap, sorted from best to worst
@@ -68,23 +69,23 @@ public class MatchController {
     // Accept a pending match request
     // PATCH /matches/57/accept?userId=400
     @PatchMapping("/{id}/accept")
-    public MatchBasicDTO acceptMatch(
+    public MatchCompleteDTO acceptMatch(
             @PathVariable Long id,
             @RequestParam Long userId) {
 
         MatchModel match = matchService.acceptMatch(id, userId);
-        return modelMapper.map(match, MatchBasicDTO.class);
+        return modelMapper.map(match, MatchCompleteDTO.class);
     }
 
     // Reject a pending match request
     // PATCH /matches/57/reject?userId=400
     @PatchMapping("/{id}/reject")
-    public MatchBasicDTO rejectMatch(
+    public MatchCompleteDTO rejectMatch(
             @PathVariable Long id,
             @RequestParam Long userId) {
 
         MatchModel match = matchService.rejectMatch(id, userId);
-        return modelMapper.map(match, MatchBasicDTO.class);
+        return modelMapper.map(match, MatchCompleteDTO.class);
     }
 
     // Mark an accepted match as completed once its meeting time has ended
@@ -121,4 +122,12 @@ public class MatchController {
     public void deleteMatch(@PathVariable Long id) {
         matchService.delete(id);
     }
+
+    // Get the pending match requests received by a user
+    // GET /matches/user/{userId}/pending
+    @GetMapping("/user/{userId}/pending")
+    public List<MatchCompleteDTO> getPendingReceived(@PathVariable Long userId) {
+        List<MatchModel> matches = matchService.getPendingReceived(userId);
+        return modelMapper.map(matches, new TypeToken<List<MatchCompleteDTO>>() {}.getType());
+}
 }

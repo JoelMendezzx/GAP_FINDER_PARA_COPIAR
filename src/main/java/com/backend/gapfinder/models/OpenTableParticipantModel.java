@@ -22,6 +22,7 @@ public class OpenTableParticipantModel extends BaseModel {
 
 
 
+    
     // The open table session joined by the student
     @ManyToOne
     @JoinColumn(name = "open_table_id", nullable = false)

@@ -1,6 +1,7 @@
 package com.backend.gapfinder.services;
 
 import com.backend.gapfinder.dto.GapBasicDTO;
+import com.backend.gapfinder.dto.GapCompleteDTO;
 import com.backend.gapfinder.dto.responses.MatchCandidateResponseDTO;
 import com.backend.gapfinder.enums.MatchStatusEnum;
 import com.backend.gapfinder.enums.NotificationTypeEnum;
@@ -176,8 +177,8 @@ public class MatchService {
                     }
 
                     MatchCandidateResponseDTO dto = new MatchCandidateResponseDTO();
-                    dto.setProposerGap(modelMapper.map(targetGap, GapBasicDTO.class));
-                    dto.setAcceptorGap(modelMapper.map(candidateGap, GapBasicDTO.class));
+                    dto.setProposerGap(modelMapper.map(targetGap, GapCompleteDTO.class));
+                    dto.setAcceptorGap(modelMapper.map(candidateGap, GapCompleteDTO.class));
                     dto.setScore(score);
                     return dto;
                 })
@@ -336,4 +337,11 @@ public class MatchService {
 
         log.info("Termina proceso de finalización automática de matches vencidos");
     }
+
+    // Get the pending match requests received by a user
+    @Transactional(readOnly = true)
+    public List<MatchModel> getPendingReceived(Long userId) {
+        log.info("Inicia proceso de consultar las solicitudes de match pendientes del usuario con id = {}", userId);
+        return matchRepository.findByAcceptorGapUserIdAndStatus(userId, MatchStatusEnum.PENDING);
+}
 }

@@ -62,4 +62,9 @@ public class OpenTableModel extends BaseModel   {
     // Date and time when the open table was created
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    // Activity proposed in the open table
+    @ManyToOne
+    @JoinColumn(name = "activity_id")
+    private ActivityModel activity;
 }

@@ -65,4 +65,12 @@ public class UserController {
     public void deleteUser(@PathVariable Long id) {
         userService.delete(id);
     }
+
+    // Add an interest to a user
+    // POST /users/{userId}/interests/{interestId}
+    @PostMapping("/{userId}/interests/{interestId}")
+    public UserBasicDTO addInterest(@PathVariable Long userId, @PathVariable Long interestId) {
+        UserModel updated = userService.addInterest(userId, interestId);
+        return modelMapper.map(updated, UserBasicDTO.class);
+    }
 }

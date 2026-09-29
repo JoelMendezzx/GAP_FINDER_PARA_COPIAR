@@ -1,6 +1,8 @@
 package com.backend.gapfinder.controllers;
 
 import com.backend.gapfinder.dto.OpenTableBasicDTO;
+import com.backend.gapfinder.dto.OpenTableCompleteDTO;
+import com.backend.gapfinder.dto.OpenTableListDTO;
 import com.backend.gapfinder.models.OpenTableModel;
 import com.backend.gapfinder.services.OpenTableService;
 
@@ -28,17 +30,17 @@ public class OpenTableController {
     // Get an open table by its id
     // GET /open-tables/{id}
     @GetMapping("/{id}")
-    public OpenTableBasicDTO getOpenTable(@PathVariable Long id) {
+    public OpenTableListDTO getOpenTable(@PathVariable Long id) {
         OpenTableModel openTable = openTableService.getById(id);
-        return modelMapper.map(openTable, OpenTableBasicDTO.class);
+        return modelMapper.map(openTable, OpenTableListDTO.class);
     }
 
     // Get all open tables
     // GET /open-tables
     @GetMapping
-    public List<OpenTableBasicDTO> getAll() {
+    public List<OpenTableListDTO> getAll() {
         List<OpenTableModel> openTables = openTableService.getAll();
-        return modelMapper.map(openTables, new TypeToken<List<OpenTableBasicDTO>>() {}.getType());
+        return modelMapper.map(openTables, new TypeToken<List<OpenTableListDTO>>() {}.getType());
     }
 
     // Count the open tables created since the given date
@@ -53,7 +55,7 @@ public class OpenTableController {
     // POST /open-tables
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public OpenTableBasicDTO createOpenTable(@RequestBody OpenTableBasicDTO dto) {
+    public OpenTableBasicDTO createOpenTable(@RequestBody OpenTableCompleteDTO dto) {
         OpenTableModel openTableModel = modelMapper.map(dto, OpenTableModel.class);
         OpenTableModel created = openTableService.create(openTableModel);
         return modelMapper.map(created, OpenTableBasicDTO.class);
@@ -62,7 +64,7 @@ public class OpenTableController {
     // Update an existing open table
     // PUT /open-tables/{id}
     @PutMapping("/{id}")
-    public OpenTableBasicDTO updateOpenTable(@PathVariable Long id, @RequestBody OpenTableBasicDTO dto) {
+    public OpenTableBasicDTO updateOpenTable(@PathVariable Long id, @RequestBody OpenTableCompleteDTO dto) {
         OpenTableModel openTableModel = modelMapper.map(dto, OpenTableModel.class);
         OpenTableModel updated = openTableService.update(id, openTableModel);
         return modelMapper.map(updated, OpenTableBasicDTO.class);

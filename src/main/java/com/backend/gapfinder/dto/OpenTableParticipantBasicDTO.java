@@ -11,4 +11,6 @@ public class OpenTableParticipantBasicDTO {
 
     // Date and time when the student joined
     private LocalDateTime joinedAt;
+
+    
 }

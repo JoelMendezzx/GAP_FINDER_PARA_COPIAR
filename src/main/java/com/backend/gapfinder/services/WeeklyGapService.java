@@ -176,4 +176,12 @@ public class WeeklyGapService {
     private static LocalTime min(LocalTime a, LocalTime b) {
         return a.isBefore(b) ? a : b;
     }
+
+    // Get the gaps of a user for the week that starts on weekStart
+    @Transactional(readOnly = true)
+    public List<GapModel> getWeekGaps(Long userId, LocalDate weekStart) {
+        userService.getById(userId);
+        return gapRepository.findByUserAndStartBetween(
+                userId, weekStart.atStartOfDay(), weekStart.plusWeeks(1).atStartOfDay());
+    }
 }

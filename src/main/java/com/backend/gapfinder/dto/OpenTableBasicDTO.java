@@ -27,4 +27,8 @@ public class OpenTableBasicDTO {
 
     // Current state of the open table
     private OpenTableStatusEnum status;
+
+    // Activity proposed in the open table
+    private ActivityBasicDTO activity;
+
 }

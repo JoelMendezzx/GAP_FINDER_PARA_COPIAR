@@ -55,20 +55,6 @@ services:
 
     ports:
       - "8080:8080"
-    build: .
-    container_name: gapfinder-app
-
-    depends_on:
-      db:
-        condition: service_healthy
-
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/gapfinder
-      SPRING_DATASOURCE_USERNAME: gapfinder
-      SPRING_DATASOURCE_PASSWORD: gapfinder
-
-    ports:
-      - "8080:8080"
 
 
 volumes:

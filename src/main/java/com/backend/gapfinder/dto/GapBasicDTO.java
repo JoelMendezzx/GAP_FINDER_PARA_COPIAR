@@ -14,4 +14,7 @@ public class GapBasicDTO {
 
     // End time of the free time slot
     private LocalDateTime endTime;
+
+    // Id of the student who owns the free time slot
+    private Long userId;
 }

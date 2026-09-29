@@ -84,4 +84,15 @@ public class GapController {
     public void deleteGap(@PathVariable Long id) {
         gapService.delete(id);
     }
+
+    // Get the gaps of a user for a week
+    // GET /gaps/user/{userId}?weekStart=YYYY-MM-DD
+    @GetMapping("/user/{userId}")
+    public List<GapBasicDTO> getUserGaps(
+            @PathVariable Long userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate weekStart) {
+        LocalDate start = weekStart != null ? weekStart : WeeklyGapService.currentOrNextWeekStart(LocalDate.now());
+        List<GapModel> gaps = weeklyGapService.getWeekGaps(userId, start);
+        return modelMapper.map(gaps, new TypeToken<List<GapBasicDTO>>() {}.getType());
+    }
 }

@@ -10,9 +10,10 @@ import java.util.List;
 
 public interface GapRepository extends JpaRepository<GapModel, Long> {
 
-    // Finds potential gaps that overlap in time and belong to other users
+    // Finds potential gaps that overlap in time, belong to other users, and are NOT already in an ACCEPTED or COMPLETED match
     @Query("SELECT g FROM GapModel g WHERE g.user.id <> :userId " +
-           "AND g.startTime < :endTime AND g.endTime > :startTime")
+           "AND g.startTime < :endTime AND g.endTime > :startTime " +
+           "AND NOT EXISTS (SELECT m FROM MatchModel m WHERE (m.proposerGap = g OR m.acceptorGap = g) AND m.status = com.backend.gapfinder.enums.MatchStatusEnum.ACCEPTED)")
     List<GapModel> findOverlappingGapsExcludingUser(
             @Param("userId") Long userId,
             @Param("startTime") LocalDateTime startTime,

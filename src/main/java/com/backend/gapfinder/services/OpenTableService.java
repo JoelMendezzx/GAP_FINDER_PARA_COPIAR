@@ -1,6 +1,7 @@
 package com.backend.gapfinder.services;
 
 import com.backend.gapfinder.exceptions.NotFoundException;
+import com.backend.gapfinder.models.ActivityModel;
 import com.backend.gapfinder.models.BuildingModel;
 import com.backend.gapfinder.models.OpenTableModel;
 import com.backend.gapfinder.models.UserModel;
@@ -20,12 +21,14 @@ public class OpenTableService {
     private final OpenTableRepository openTableRepository;
     private final UserService userService;
     private final BuildingService buildingService;
+    private final ActivityService activityService;
 
     public OpenTableService(OpenTableRepository openTableRepository, UserService userService,
-                             BuildingService buildingService) {
+                            BuildingService buildingService, ActivityService activityService) {
         this.openTableRepository = openTableRepository;
         this.userService = userService;
         this.buildingService = buildingService;
+        this.activityService = activityService;
     }
 
     // Get an open table by its id
@@ -52,10 +55,12 @@ public class OpenTableService {
 
         UserModel creator = userService.getById(openTable.getCreator().getId());
         BuildingModel building = buildingService.getById(openTable.getBuilding().getId());
+        ActivityModel activity = resolveActivity(openTable.getActivity());
 
         openTable.setId(null);
         openTable.setCreator(creator);
         openTable.setBuilding(building);
+        openTable.setActivity(activity);
         openTable.setCreatedAt(LocalDateTime.now());
 
         log.info("Termina proceso de creación de una open table con título = {}", openTable.getTitle());
@@ -72,9 +77,11 @@ public class OpenTableService {
 
         UserModel creator = userService.getById(openTable.getCreator().getId());
         BuildingModel building = buildingService.getById(openTable.getBuilding().getId());
+        ActivityModel activity = resolveActivity(openTable.getActivity());
 
         existente.setCreator(creator);
         existente.setBuilding(building);
+        existente.setActivity(activity);
         existente.setTitle(openTable.getTitle());
         existente.setDescription(openTable.getDescription());
         existente.setStartTime(openTable.getStartTime());
@@ -126,6 +133,14 @@ public class OpenTableService {
         if (openTable.getStatus() == null) {
             throw new IllegalArgumentException("Debe indicar el estado de la open table (status)");
         }
+    }
+
+    // Resolve the activity from the id provided
+    private ActivityModel resolveActivity(ActivityModel activity) {
+        if (activity == null || activity.getId() == null) {
+            throw new IllegalArgumentException("Debe indicar la actividad (activity)");
+        }
+        return activityService.getById(activity.getId());
     }
 
     // Count the open tables created since the given date (used for the abandonment statistics)

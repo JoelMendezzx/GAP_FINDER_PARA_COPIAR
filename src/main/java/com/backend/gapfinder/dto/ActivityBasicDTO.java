@@ -17,4 +17,7 @@ public class ActivityBasicDTO {
 
     // Energy or engagement level required
     private EffortTypeEnum effortType;
+
+    // Interest the activity belongs to
+    private InterestBasicDTO interest;
 }

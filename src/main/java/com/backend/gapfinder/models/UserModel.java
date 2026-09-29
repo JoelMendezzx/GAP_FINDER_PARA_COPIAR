@@ -18,6 +18,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.ToString;
 
 @Entity
 @Table(name = "users")
@@ -61,6 +62,7 @@ public class UserModel extends BaseModel {
     private LocalDateTime createdAt;
 
     // List of student's personal interests
+    @ToString.Exclude
     @ManyToMany
     @JoinTable(
         name = "user_interests",
