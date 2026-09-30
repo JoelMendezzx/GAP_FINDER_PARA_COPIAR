@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.validation.Valid;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -34,11 +36,23 @@ public class OpenTableAbandonmentController {
     @ResponseStatus(HttpStatus.CREATED)
     public OpenTableAbandonmentBasicDTO createAbandonment(
             @PathVariable Long userId,
-            @RequestBody OpenTableAbandonmentBasicDTO dto) {
+            @Valid @RequestBody OpenTableAbandonmentBasicDTO dto) {
 
-        OpenTableAbandonmentModel abandonmentModel = modelMapper.map(dto, OpenTableAbandonmentModel.class);
-        OpenTableAbandonmentModel created = abandonmentService.create(userId, abandonmentModel);
-        return modelMapper.map(created, OpenTableAbandonmentBasicDTO.class);
+        OpenTableAbandonmentModel abandonment = new OpenTableAbandonmentModel();
+        abandonment.setStep(dto.step());
+        abandonment.setActivityId(dto.activityId());
+        abandonment.setDurationMinutes(dto.durationMinutes());
+        abandonment.setMaxParticipants(dto.maxParticipants());
+        abandonment.setBuildingId(dto.buildingId());
+
+        OpenTableAbandonmentModel created = abandonmentService.create(userId, abandonment);
+
+        return new OpenTableAbandonmentBasicDTO(
+                created.getStep(),
+                created.getActivityId(),
+                created.getDurationMinutes(),
+                created.getMaxParticipants(),
+                created.getBuildingId());
     }
 
     // Count the abandonments per creation step since the given date
