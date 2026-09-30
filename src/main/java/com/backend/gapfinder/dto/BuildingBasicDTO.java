@@ -1,9 +1,7 @@
 package com.backend.gapfinder.dto;
 
 import lombok.Data;
-import org.locationtech.jts.geom.Point;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 public class BuildingBasicDTO {
