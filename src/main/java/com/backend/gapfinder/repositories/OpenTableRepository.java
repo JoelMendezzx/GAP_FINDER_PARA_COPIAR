@@ -34,4 +34,7 @@ public interface OpenTableRepository extends JpaRepository<OpenTableModel, Long>
 
     // Counts the total number of open tables created on or after the specified timestamp.
     long countByCreatedAtGreaterThanEqual(LocalDateTime since);
+
+    // Find the open tables with any of the given statuses whose end time is before the given time
+    List<OpenTableModel> findByStatusInAndEndTimeBefore(List<OpenTableStatusEnum> statuses, LocalDateTime time);
 }

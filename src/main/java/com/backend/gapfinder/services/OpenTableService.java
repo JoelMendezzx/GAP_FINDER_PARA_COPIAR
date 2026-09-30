@@ -1,13 +1,16 @@
 package com.backend.gapfinder.services;
 
+import com.backend.gapfinder.enums.OpenTableStatusEnum;
 import com.backend.gapfinder.exceptions.NotFoundException;
 import com.backend.gapfinder.models.ActivityModel;
 import com.backend.gapfinder.models.BuildingModel;
 import com.backend.gapfinder.models.OpenTableModel;
 import com.backend.gapfinder.models.UserModel;
+import com.backend.gapfinder.repositories.OpenTableParticipantRepository;
 import com.backend.gapfinder.repositories.OpenTableRepository;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,13 +22,18 @@ import java.util.List;
 public class OpenTableService {
 
     private final OpenTableRepository openTableRepository;
+    private final OpenTableParticipantRepository openTableParticipantRepository;
     private final UserService userService;
     private final BuildingService buildingService;
     private final ActivityService activityService;
 
-    public OpenTableService(OpenTableRepository openTableRepository, UserService userService,
-                            BuildingService buildingService, ActivityService activityService) {
+    public OpenTableService(OpenTableRepository openTableRepository,
+                            OpenTableParticipantRepository openTableParticipantRepository,
+                            UserService userService,
+                            BuildingService buildingService,
+                            ActivityService activityService) {
         this.openTableRepository = openTableRepository;
+        this.openTableParticipantRepository = openTableParticipantRepository;
         this.userService = userService;
         this.buildingService = buildingService;
         this.activityService = activityService;
@@ -102,6 +110,24 @@ public class OpenTableService {
         openTableRepository.delete(existente);
 
         log.info("Termina proceso de eliminación de la open table con id = {}", id);
+    }
+
+    // Close the open tables whose end time has passed (COMPLETED or EMPTY), runs every minute
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void closeExpiredTables() {
+        log.info("Inicia proceso de cierre de open tables vencidas");
+
+        List<OpenTableModel> expired = openTableRepository.findByStatusInAndEndTimeBefore(
+                List.of(OpenTableStatusEnum.OPEN, OpenTableStatusEnum.FULL),
+                LocalDateTime.now());
+
+        for (OpenTableModel table : expired) {
+            long participants = openTableParticipantRepository.countByOpenTableId(table.getId());
+            table.setStatus(participants >= 1 ? OpenTableStatusEnum.COMPLETED : OpenTableStatusEnum.EMPTY);
+        }
+
+        log.info("Termina proceso de cierre de open tables vencidas, cerradas = {}", expired.size());
     }
 
     // Validate that the open table data is correct
