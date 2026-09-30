@@ -25,16 +25,4 @@ public class BuildingModel extends BaseModel {
     @Column(nullable = false, unique = true)
     private String name;
 
-    // Geographic point representing the location of the building
-    @JdbcTypeCode(SqlTypes.GEOGRAPHY)
-    @Column(
-        name = "location",
-        columnDefinition = "geography(Point,4326)",
-        nullable = false
-    )
-    private Point location;
-
-    // Radius in meters defining the coverage area around the building
-    @Column(name = "radius_meters", nullable = false)
-    private double radiusMeters;
 }

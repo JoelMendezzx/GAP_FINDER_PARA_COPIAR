@@ -27,15 +27,8 @@ public class UserBasicDTO {
     // URL of the user's profile picture/avatar.
     private String avatarUrl;
 
-    // Indicates whether the user's account is verified.
-    private boolean verified;
-
     // Date and time when the user account was created.
     private LocalDateTime createdAt;
 
-    // User's selected effort type or preference level (Enum).
-    private EffortTypeEnum preferredEffort;
 
-    // Last date and time when the user's location was updated.
-    private LocalDateTime locationUpdatedAt;
 }

@@ -33,9 +33,6 @@ public class UserModel extends BaseModel {
     @Column(nullable = false, unique = true)
     private String email;
 
-    // BCrypt hash of the password (the plain password is never stored)
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
 
     // Contact phone number
     @Column(name = "phone_number", nullable = true)
@@ -53,10 +50,6 @@ public class UserModel extends BaseModel {
     @Column(name = "avatar_url", nullable = true)
     private String avatarUrl;
 
-    // Whether the account has been verified (e.g. by email confirmation)
-    @Column(nullable = false)
-    private boolean verified = false;
-
     // Date and time the account was created
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -71,17 +64,5 @@ public class UserModel extends BaseModel {
     )
     private List<InterestModel> interests;
 
-    // Current building on campus (for context-aware features)
-    @ManyToOne
-    @JoinColumn(name = "current_building_id", nullable = true)
-    private BuildingModel currentBuilding;
 
-    // Last time the current location was updated
-    @Column(name = "location_updated_at", nullable = true)
-    private LocalDateTime locationUpdatedAt;
-
-    // Preferred effort level for activities (used in match scoring)
-    @Enumerated(EnumType.STRING)
-    @Column(name = "preferred_effort", nullable = true)
-    private EffortTypeEnum preferredEffort;
 }

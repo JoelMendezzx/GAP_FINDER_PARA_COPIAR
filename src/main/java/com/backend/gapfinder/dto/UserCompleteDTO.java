@@ -11,6 +11,4 @@ public class UserCompleteDTO extends UserBasicDTO {
     // List of student's personal interests
     private List interests;
 
-    // Current building on campus
-    private BuildingBasicDTO currentBuilding;
 }

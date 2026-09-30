@@ -14,11 +14,6 @@ public class BuildingBasicDTO {
     // Name of the campus building
     private String name;
 
-    
-    // Geographic point representing the location of the building
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private Point location;
-
     // Radius in meters defining the coverage area around the building
     private double radiusMeters;
 }

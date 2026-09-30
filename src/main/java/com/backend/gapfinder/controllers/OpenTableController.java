@@ -5,13 +5,10 @@ import com.backend.gapfinder.dto.OpenTableCompleteDTO;
 import com.backend.gapfinder.dto.OpenTableListDTO;
 import com.backend.gapfinder.models.OpenTableModel;
 import com.backend.gapfinder.services.OpenTableService;
-
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,13 +40,6 @@ public class OpenTableController {
         return modelMapper.map(openTables, new TypeToken<List<OpenTableListDTO>>() {}.getType());
     }
 
-    // Count the open tables created since the given date
-    // GET /open-tables/count?since=2026-09-01T00:00:00
-    @GetMapping("/count")
-    public long countCreatedSince(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime since) {
-        return openTableService.countCreatedSince(since);
-    }
 
     // Create a new open table
     // POST /open-tables

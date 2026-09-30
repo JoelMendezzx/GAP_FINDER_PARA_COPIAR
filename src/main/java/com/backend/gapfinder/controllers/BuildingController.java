@@ -40,18 +40,6 @@ public class BuildingController {
         return modelMapper.map(buildings, new TypeToken<List<BuildingBasicDTO>>() {}.getType());
     }
 
-    // Find the building that contains the given GPS coordinates
-    // GET /buildings/locate?latitude=4.6015&longitude=-74.0661
-    @GetMapping("/locate")
-    public BuildingBasicDTO locateBuilding(
-            @RequestParam double latitude,
-            @RequestParam double longitude) {
-
-        BuildingModel building = buildingService.findBuildingContainingUser(latitude, longitude)
-                .orElseThrow(() -> new NotFoundException("No hay ningún edificio en las coordenadas indicadas"));
-        return modelMapper.map(building, BuildingBasicDTO.class);
-    }
-
     // Create a new building
     // POST /buildings
     @PostMapping
