@@ -1,20 +1,12 @@
 package com.backend.gapfinder.controllers;
 
 import com.backend.gapfinder.dto.OpenTableAbandonmentBasicDTO;
-import com.backend.gapfinder.dto.OpenTableAbandonmentStatsBasicDTO;
-import com.backend.gapfinder.enums.OpenTableCreationStepEnum;
-import com.backend.gapfinder.exceptions.NotFoundException;
 import com.backend.gapfinder.models.OpenTableAbandonmentModel;
 import com.backend.gapfinder.services.OpenTableAbandonmentService;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 
 import jakarta.validation.Valid;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,30 +45,5 @@ public class OpenTableAbandonmentController {
                 created.getDurationMinutes(),
                 created.getMaxParticipants(),
                 created.getBuildingId());
-    }
-
-    // Count the abandonments per creation step since the given date
-    // GET /open-table-abandonments/count-by-step?since=2026-09-01T00:00:00
-    @GetMapping("/count-by-step")
-    public Map<OpenTableCreationStepEnum, Long> countByStep(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime since) {
-        return abandonmentService.countByStep(since);
-    }
-
-    // Get abandonments, users reached and abandonment rate per step since the given date
-    // GET /open-table-abandonments/stats?since=2026-09-01T00:00:00
-    @GetMapping("/stats")
-    public List<OpenTableAbandonmentStatsBasicDTO> getAbandonmentStats(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime since) {
-        return abandonmentService.calculateAbandonmentRateByStep(since);
-    }
-
-    // Get the step with the highest abandonment rate since the given date
-    // GET /open-table-abandonments/stats/most-abandoned?since=2026-09-01T00:00:00
-    @GetMapping("/stats/most-abandoned")
-    public OpenTableAbandonmentStatsBasicDTO getMostAbandonedStep(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime since) {
-        return abandonmentService.getMostAbandonedStep(since)
-                .orElseThrow(() -> new NotFoundException("No hay abandonos registrados desde la fecha indicada"));
     }
 }

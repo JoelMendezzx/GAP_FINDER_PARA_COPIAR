@@ -1,7 +1,6 @@
 package com.backend.gapfinder.controllers;
 
 import com.backend.gapfinder.dto.OpenTableParticipantBasicDTO;
-import com.backend.gapfinder.dto.OpenTableParticipantCompleteDTO;
 import com.backend.gapfinder.models.OpenTableParticipantModel;
 import com.backend.gapfinder.services.OpenTableParticipantService;
 
@@ -68,31 +67,4 @@ public class OpenTableParticipantController {
     public void deleteParticipant(@PathVariable Long id) {
         openTableParticipantService.delete(id);
     }
-
-    // Get the participants of an open table
-    // GET /open-table-participants/table/{tableId}
-    @GetMapping("/table/{tableId}")
-    public List<OpenTableParticipantCompleteDTO> getByOpenTable(@PathVariable Long tableId) {
-        List<OpenTableParticipantModel> participants = openTableParticipantService.getByOpenTable(tableId);
-        return modelMapper.map(participants, new TypeToken<List<OpenTableParticipantCompleteDTO>>() {}.getType());
-    }
-
-    // A user joins an open table
-    // POST /open-table-participants/table/{tableId}/join?userId=1
-    @PostMapping("/table/{tableId}/join")
-    @ResponseStatus(HttpStatus.CREATED)
-    public OpenTableParticipantCompleteDTO join(@PathVariable Long tableId, @RequestParam Long userId) {
-        OpenTableParticipantModel joined = openTableParticipantService.join(tableId, userId);
-        return modelMapper.map(joined, OpenTableParticipantCompleteDTO.class);
-    }
-
-    // A user leaves an open table
-    // DELETE /open-table-participants/table/{tableId}/leave?userId=1
-    @DeleteMapping("/table/{tableId}/leave")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void leave(@PathVariable Long tableId, @RequestParam Long userId) {
-        openTableParticipantService.leave(tableId, userId);
-    }
-
-    
 }

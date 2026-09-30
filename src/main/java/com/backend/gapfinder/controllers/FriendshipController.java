@@ -1,9 +1,7 @@
 package com.backend.gapfinder.controllers;
 
 import com.backend.gapfinder.dto.FriendshipBasicDTO;
-import com.backend.gapfinder.dto.UserBasicDTO;
 import com.backend.gapfinder.models.FriendshipModel;
-import com.backend.gapfinder.models.UserModel;
 import com.backend.gapfinder.services.FriendshipService;
 
 import java.util.List;
@@ -41,14 +39,6 @@ public class FriendshipController {
         return modelMapper.map(friendships, new TypeToken<List<FriendshipBasicDTO>>() {}.getType());
     }
 
-    // Get all accepted friends from a user
-    // GET /friendships/user/{userId}/friends
-    @GetMapping("/user/{userId}/friends")
-    public List<UserBasicDTO> getFriendsByUser(@PathVariable Long userId) {
-        List<UserModel> friends = friendshipService.getFriendsByUser(userId);
-        return modelMapper.map(friends, new TypeToken<List<UserBasicDTO>>() {}.getType());
-    }
-
     // Create a new friendship
     // POST /friendships
     @PostMapping
@@ -74,27 +64,5 @@ public class FriendshipController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFriendship(@PathVariable Long id) {
         friendshipService.delete(id);
-    }
-
-        // Accept a pending friend request
-    // PATCH /friendships/57/accept?userId=400
-    @PatchMapping("/{id}/accept")
-    public FriendshipBasicDTO acceptFriendship(
-            @PathVariable Long id,
-            @RequestParam Long userId) {
-
-        FriendshipModel friendship = friendshipService.acceptFriendship(id, userId);
-        return modelMapper.map(friendship, FriendshipBasicDTO.class);
-    }
-
-    // Reject a pending friend request
-    // PATCH /friendships/57/reject?userId=400
-    @PatchMapping("/{id}/reject")
-    public FriendshipBasicDTO rejectFriendship(
-            @PathVariable Long id,
-            @RequestParam Long userId) {
-
-        FriendshipModel friendship = friendshipService.rejectFriendship(id, userId);
-        return modelMapper.map(friendship, FriendshipBasicDTO.class);
     }
 }

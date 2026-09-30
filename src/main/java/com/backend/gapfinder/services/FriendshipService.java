@@ -1,15 +1,12 @@
 package com.backend.gapfinder.services;
 
 import com.backend.gapfinder.enums.FriendshipStatusEnum;
-import com.backend.gapfinder.enums.NotificationTypeEnum;
-import com.backend.gapfinder.events.FriendshipEvent;
 import com.backend.gapfinder.exceptions.NotFoundException;
 import com.backend.gapfinder.models.FriendshipModel;
 import com.backend.gapfinder.models.UserModel;
 import com.backend.gapfinder.repositories.FriendshipRepository;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +19,10 @@ public class FriendshipService {
 
     private final FriendshipRepository friendshipRepository;
     private final UserService userService;
-    private final ApplicationEventPublisher eventPublisher;
 
-    public FriendshipService(FriendshipRepository friendshipRepository, UserService userService,
-                             ApplicationEventPublisher eventPublisher) {
+    public FriendshipService(FriendshipRepository friendshipRepository, UserService userService) {
         this.friendshipRepository = friendshipRepository;
         this.userService = userService;
-        this.eventPublisher = eventPublisher;
     }
 
     // Get a friendship by its id
@@ -46,7 +40,7 @@ public class FriendshipService {
         return friendshipRepository.findAll();
     }
 
-    // Create a new friendship and notify the receiver
+    // Create a new friendship
     @Transactional
     public FriendshipModel create(FriendshipModel friendship) {
         log.info("Inicia proceso de creación de una amistad");
@@ -65,12 +59,6 @@ public class FriendshipService {
         friendship.setCreatedAt(LocalDateTime.now());
 
         FriendshipModel saved = friendshipRepository.save(friendship);
-
-        eventPublisher.publishEvent(new FriendshipEvent(
-                NotificationTypeEnum.FRIEND_REQUEST_SENT,
-                receiver.getId(),
-                requester.getName(),
-                saved.getId()));
 
         log.info("Termina proceso de creación de una amistad");
         return saved;
@@ -119,81 +107,5 @@ public class FriendshipService {
         if (friendship.getRequester().getId().equals(friendship.getReceiver().getId())) {
             throw new IllegalArgumentException("Un usuario no puede enviarse solicitud a sí mismo");
         }
-    }
-
-
-    // Accept a pending friend request and notify the requester
-    @Transactional
-    public FriendshipModel acceptFriendship(Long friendshipId, Long userId) {
-        log.info("Inicia proceso de aceptación de la amistad con id = {} por el usuario = {}", friendshipId, userId);
-
-        FriendshipModel friendship = getById(friendshipId);
-        validateReceiver(friendship, userId);
-        validatePending(friendship);
-
-        friendship.setStatus(FriendshipStatusEnum.ACCEPTED);
-        FriendshipModel saved = friendshipRepository.save(friendship);
-
-        eventPublisher.publishEvent(new FriendshipEvent(
-                NotificationTypeEnum.FRIEND_REQUEST_ACCEPTED,
-                saved.getRequester().getId(),
-                saved.getReceiver().getName(),
-                saved.getId()));
-
-        log.info("Termina proceso de aceptación de la amistad con id = {}", friendshipId);
-        return saved;
-    }
-
-    // Reject a pending friend request and notify the requester
-    @Transactional
-    public FriendshipModel rejectFriendship(Long friendshipId, Long userId) {
-        log.info("Inicia proceso de rechazo de la amistad con id = {} por el usuario = {}", friendshipId, userId);
-
-        FriendshipModel friendship = getById(friendshipId);
-        validateReceiver(friendship, userId);
-        validatePending(friendship);
-
-        friendship.setStatus(FriendshipStatusEnum.REJECTED);
-        FriendshipModel saved = friendshipRepository.save(friendship);
-
-        eventPublisher.publishEvent(new FriendshipEvent(
-                NotificationTypeEnum.FRIEND_REQUEST_REJECTED,
-                saved.getRequester().getId(),
-                saved.getReceiver().getName(),
-                saved.getId()));
-
-        log.info("Termina proceso de rechazo de la amistad con id = {}", friendshipId);
-        return saved;
-    }
-
-    // Check that the user responding is the receiver of the friend request
-    private void validateReceiver(FriendshipModel friendship, Long userId) {
-        if (!friendship.getReceiver().getId().equals(userId)) {
-            throw new IllegalArgumentException("Solo el usuario que recibe la solicitud puede responderla");
-        }
-    }
-
-    // Check that the friend request is still pending before responding to it
-    private void validatePending(FriendshipModel friendship) {
-        if (friendship.getStatus() != FriendshipStatusEnum.PENDING) {
-            throw new IllegalArgumentException("La solicitud de amistad ya fue respondida");
-        }
-    }
-
-    // Get all accepted friends from a user
-    @Transactional(readOnly = true)
-    public List<UserModel> getFriendsByUser(Long userId) {
-        log.info("Inicia proceso de consultar los amigos del usuario con id = {}", userId);
-
-        userService.getById(userId);
-
-        List<UserModel> friends = friendshipRepository
-                .findByUserAndStatus(userId, FriendshipStatusEnum.ACCEPTED)
-                .stream()
-                .map(f -> f.getRequester().getId().equals(userId) ? f.getReceiver() : f.getRequester())
-                .toList();
-
-        log.info("Termina proceso de consultar los amigos del usuario con id = {}", userId);
-        return friends;
     }
 }

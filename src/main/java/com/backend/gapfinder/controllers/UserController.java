@@ -65,21 +65,4 @@ public class UserController {
     public void deleteUser(@PathVariable Long id) {
         userService.delete(id);
     }
-
-    // Add an interest to a user
-    // POST /users/{userId}/interests/{interestId}
-    @PostMapping("/{userId}/interests/{interestId}")
-    public UserBasicDTO addInterest(@PathVariable Long userId, @PathVariable Long interestId) {
-        UserModel updated = userService.addInterest(userId, interestId);
-        return modelMapper.map(updated, UserBasicDTO.class);
-    }
-
-    // Search users by name
-    // GET /users/search?name={name}
-    @GetMapping("/search")
-    public List<UserBasicDTO> searchByName(@RequestParam String name) {
-        List<UserModel> users = userService.searchByName(name);
-        return modelMapper.map(users, new TypeToken<List<UserBasicDTO>>() {}.getType());
-    }
-
 }

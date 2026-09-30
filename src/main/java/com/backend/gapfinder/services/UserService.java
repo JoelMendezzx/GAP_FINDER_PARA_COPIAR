@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -119,36 +118,5 @@ public class UserService {
         }
 
         return buildingService.getById(currentBuilding.getId());
-    }
-
-    // Add an interest to an existing user
-    @Transactional
-    public UserModel addInterest(Long userId, Long interestId) {
-        UserModel user = getById(userId);
-        InterestModel interest = interestService.getById(interestId);
-
-        if (user.getInterests() == null) {
-            user.setInterests(new ArrayList<>());
-        }
-
-        boolean exists = user.getInterests().stream()
-                .anyMatch(i -> i.getId().equals(interestId));
-        if (!exists) {
-            user.getInterests().add(interest);
-        }
-
-        return userRepository.save(user);
-    }
-
-    // Search users by name
-    @Transactional
-    public List<UserModel> searchByName(String name) {
-        log.info("Inicia proceso de búsqueda de usuarios con nombre = {}", name);
-
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("El texto de búsqueda es obligatorio");
-        }
-
-        return userRepository.findByNameContainingIgnoreCase(name.trim());
     }
 }

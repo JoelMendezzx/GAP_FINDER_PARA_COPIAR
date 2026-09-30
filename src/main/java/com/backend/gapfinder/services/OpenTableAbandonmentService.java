@@ -1,6 +1,5 @@
 package com.backend.gapfinder.services;
 
-import com.backend.gapfinder.dto.OpenTableAbandonmentStatsBasicDTO;
 import com.backend.gapfinder.enums.OpenTableCreationStepEnum;
 import com.backend.gapfinder.models.OpenTableAbandonmentModel;
 import com.backend.gapfinder.repositories.OpenTableAbandonmentRepository;
@@ -9,15 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-// Handles the registration and analytics of abandoned open table creation flows GRUPAL BQ - TYPE 2
+// Handles the registration of abandoned open table creation flows
 @Slf4j
 @Service
 public class OpenTableAbandonmentService {
@@ -26,19 +17,16 @@ public class OpenTableAbandonmentService {
     private final UserService userService;
     private final ActivityService activityService;
     private final BuildingService buildingService;
-    private final OpenTableService openTableService;
 
     // Dependency injection constructor
     public OpenTableAbandonmentService(OpenTableAbandonmentRepository abandonmentRepository,
                                        UserService userService,
                                        ActivityService activityService,
-                                       BuildingService buildingService,
-                                       OpenTableService openTableService) {
+                                       BuildingService buildingService) {
         this.abandonmentRepository = abandonmentRepository;
         this.userService = userService;
         this.activityService = activityService;
         this.buildingService = buildingService;
-        this.openTableService = openTableService;
     }
 
     // Register an abandoned creation flow for a user
@@ -97,56 +85,5 @@ public class OpenTableAbandonmentService {
         if (abandonment.getBuildingId() != null) {
             buildingService.getById(abandonment.getBuildingId());
         }
-    }
-
-    // Count the abandonments per step since the given date (steps without abandonments return 0)
-    @Transactional(readOnly = true)
-    public Map<OpenTableCreationStepEnum, Long> countByStep(LocalDateTime since) {
-        Map<OpenTableCreationStepEnum, Long> counts = new EnumMap<>(OpenTableCreationStepEnum.class);
-        for (OpenTableCreationStepEnum step : OpenTableCreationStepEnum.values()) {
-            counts.put(step, 0L);
-        }
-        for (Object[] row : abandonmentRepository.countGroupedByStep(since)) {
-            counts.put((OpenTableCreationStepEnum) row[0], (Long) row[1]);
-        }
-        return counts;
-    }
-
-    // Calculate abandonments, users who reached each step and abandonment rate per step since the given date
-    @Transactional(readOnly = true)
-    public List<OpenTableAbandonmentStatsBasicDTO> calculateAbandonmentRateByStep(LocalDateTime since) {
-        log.info("Inicia proceso de calcular la tasa de abandono por paso");
-
-        Map<OpenTableCreationStepEnum, Long> counts = countByStep(since);
-        long created = openTableService.countCreatedSince(since);
-        OpenTableCreationStepEnum[] steps = OpenTableCreationStepEnum.values();
-
-        List<OpenTableAbandonmentStatsBasicDTO> stats = new ArrayList<>();
-        for (OpenTableCreationStepEnum step : steps) {
-            long abandonments = counts.get(step);
-
-            // Reached step k: the open tables created + the abandonments at step k or later steps
-            long reached = created;
-            for (OpenTableCreationStepEnum other : steps) {
-                if (other.ordinal() >= step.ordinal()) {
-                    reached += counts.get(other);
-                }
-            }
-
-            double rate = reached == 0 ? 0.0 : (double) abandonments / reached;
-            stats.add(new OpenTableAbandonmentStatsBasicDTO(step, abandonments, reached, rate));
-        }
-
-        log.info("Termina proceso de calcular la tasa de abandono por paso");
-        return stats;
-    }
-
-    // Get the step with the highest abandonment rate (ties broken by number of abandonments)
-    @Transactional(readOnly = true)
-    public Optional<OpenTableAbandonmentStatsBasicDTO> getMostAbandonedStep(LocalDateTime since) {
-        return calculateAbandonmentRateByStep(since).stream()
-                .filter(stat -> stat.abandonments() > 0)
-                .max(Comparator.comparingDouble(OpenTableAbandonmentStatsBasicDTO::abandonmentRate)
-                        .thenComparingLong(OpenTableAbandonmentStatsBasicDTO::abandonments));
     }
 }
