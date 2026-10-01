@@ -47,7 +47,7 @@ public class MatchController {
     public List<MatchCandidateResponseDTO> findCandidates(@PathVariable Long gapId) {
         return matchService.findCandidates(gapId);
     }
-
+    
     // Send a match request between two gaps using an already calculated score
     // POST /matches/request?proposerGapId=10&acceptorGapId=25&score=87.5
     @PostMapping("/request")
