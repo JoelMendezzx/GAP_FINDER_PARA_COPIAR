@@ -2,6 +2,7 @@ package com.backend.gapfinder.services;
 
 import com.backend.gapfinder.dto.OpenTableAbandonmentStatsBasicDTO;
 import com.backend.gapfinder.dto.responses.BuildingGapPresenceResponseDTO;
+import com.backend.gapfinder.dto.responses.CareerUnmatchedRateResponseDTO;
 import com.backend.gapfinder.dto.responses.GapCoverageResponseDTO;
 import com.backend.gapfinder.exceptions.NotFoundException;
 import com.backend.gapfinder.repositories.GapRepository;
@@ -112,4 +113,39 @@ public class AnalyticsService {
     }
 
     // ================== END BQ 3 TYPE 2 GRUPAL ==================
+
+    // ==================== BQ 12 ====================
+    // Which careers and semesters have the highest rate of unmatched free time on campus?
+
+    // Minimum students per group (career + semester): smaller groups are hidden so nobody can be identified
+    private static final long MIN_STUDENTS_PER_GROUP = 5;
+
+    @Transactional(readOnly = true)
+    public List<CareerUnmatchedRateResponseDTO> getUnmatchedRateByCareerAndSemester(LocalDateTime since,
+                                                                                LocalDateTime until) {
+        if (since == null || until == null || !since.isBefore(until)) {
+            throw new IllegalArgumentException("El rango de fechas no es válido");
+        }
+
+        return gapRepository.findUnmatchedTimeByCareerAndSemester(since, until, MIN_STUDENTS_PER_GROUP).stream()
+                .map(row -> {
+                    CareerUnmatchedRateResponseDTO dto = new CareerUnmatchedRateResponseDTO();
+                    dto.setCareer(row.getCareer());
+                    dto.setSemester(row.getSemester());
+                    dto.setStudents(row.getStudents());
+                    dto.setFreeMinutes(round(row.getFreeMinutes()));
+                    dto.setUnmatchedMinutes(round(row.getUnmatchedMinutes()));
+                    dto.setUnmatchedRatePercent(row.getFreeMinutes() == 0 ? 0.0
+                            : round(row.getUnmatchedMinutes() / row.getFreeMinutes() * 100));
+                    return dto;
+                })
+                .sorted(Comparator.comparing(CareerUnmatchedRateResponseDTO::getUnmatchedRatePercent).reversed())
+                .toList();
+    }
+
+    private double round(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
+
+    // ================== END BQ 12 ==================
 }

@@ -1,6 +1,7 @@
 package com.backend.gapfinder.repositories;
 
 import com.backend.gapfinder.models.GapModel;
+import com.backend.gapfinder.repositories.projections.CareerUnmatchedTimeProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -59,5 +60,33 @@ public interface GapRepository extends JpaRepository<GapModel, Long> {
             @Param("to") LocalDateTime to
     );
 
+
+    @Query(value = """
+        WITH per_gap AS (
+            SELECT g.id, g.user_id,
+                   EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60.0 AS gap_minutes,
+                   LEAST(COALESCE(SUM(EXTRACT(EPOCH FROM (m.end_time - m.start_time)) / 60.0), 0),
+                         EXTRACT(EPOCH FROM (g.end_time - g.start_time)) / 60.0) AS matched_minutes
+            FROM gaps g
+            LEFT JOIN matches m ON (m.proposer_gap_id = g.id OR m.acceptor_gap_id = g.id)
+                               AND m.status IN ('ACCEPTED', 'COMPLETED')
+            WHERE g.start_time >= :since AND g.start_time < :until
+            GROUP BY g.id, g.user_id, g.start_time, g.end_time
+        )
+        SELECT u.career AS "career",
+               u.semester AS "semester",
+               COUNT(DISTINCT u.id) AS "students",
+               SUM(pg.gap_minutes) AS "freeMinutes",
+               SUM(pg.gap_minutes - pg.matched_minutes) AS "unmatchedMinutes"
+        FROM per_gap pg
+        JOIN users u ON u.id = pg.user_id
+        WHERE u.semester IS NOT NULL
+        GROUP BY u.career, u.semester
+        HAVING COUNT(DISTINCT u.id) >= :minStudents
+        """, nativeQuery = true)
+    List<CareerUnmatchedTimeProjection> findUnmatchedTimeByCareerAndSemester(
+            @Param("since") LocalDateTime since,
+            @Param("until") LocalDateTime until,
+            @Param("minStudents") long minStudents);
 
     }
