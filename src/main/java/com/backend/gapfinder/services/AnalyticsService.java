@@ -3,6 +3,12 @@ package com.backend.gapfinder.services;
 import com.backend.gapfinder.dto.OpenTableAbandonmentStatsBasicDTO;
 import com.backend.gapfinder.dto.responses.BuildingGapPresenceResponseDTO;
 import com.backend.gapfinder.dto.responses.GapCoverageResponseDTO;
+import com.backend.gapfinder.dto.responses.ConnectionCompletionResponseDTO;
+import com.backend.gapfinder.dto.responses.ConnectionCompletionStatsResponseDTO;
+import com.backend.gapfinder.enums.ConnectionCompletionResultEnum;
+import com.backend.gapfinder.repositories.MatchRepository;
+import com.backend.gapfinder.repositories.OpenTableRepository;
+import com.backend.gapfinder.repositories.projections.ConnectionCompletionProjection;
 import com.backend.gapfinder.exceptions.NotFoundException;
 import com.backend.gapfinder.repositories.GapRepository;
 import com.backend.gapfinder.repositories.UserLocationLogRepository;
@@ -22,13 +28,19 @@ public class AnalyticsService {
     private final GapRepository gapRepository;
     private final UserLocationLogRepository locationLogRepository;
     private final OpenTableAbandonmentService abandonmentService;
+    private final MatchRepository matchRepository;
+    private final OpenTableRepository openTableRepository;
 
     public AnalyticsService(GapRepository gapRepository,
+                            MatchRepository matchRepository,
+                            OpenTableRepository openTableRepository,
                             UserLocationLogRepository locationLogRepository,
                             OpenTableAbandonmentService abandonmentService) {
         this.gapRepository = gapRepository;
         this.locationLogRepository = locationLogRepository;
         this.abandonmentService = abandonmentService;
+        this.matchRepository = matchRepository;
+        this.openTableRepository = openTableRepository;
     }
 
     // ==================== BQ 5 ====================
@@ -112,4 +124,44 @@ public class AnalyticsService {
     }
 
     // ================== END BQ 3 TYPE 2 GRUPAL ==================
+
+    // ==================== BQ 7 ====================
+    // Which connection method has the higher completion rate: open tables or matches?
+
+    // Compares stored COMPLETED counts over all records, without inferring completion or filtering dates.
+    @Transactional(readOnly = true)
+    public ConnectionCompletionResponseDTO getConnectionCompletion() {
+        ConnectionCompletionStatsResponseDTO matches = toConnectionCompletionStats(
+                matchRepository.findConnectionCompletionStats());
+        ConnectionCompletionStatsResponseDTO openTables = toConnectionCompletionStats(
+                openTableRepository.findConnectionCompletionStats());
+
+        ConnectionCompletionResultEnum result;
+        if (matches.getTotalConnections() == 0 || openTables.getTotalConnections() == 0) {
+            result = ConnectionCompletionResultEnum.INSUFFICIENT_DATA;
+        } else {
+            int comparison = Double.compare(matches.getCompletionRatePercent(), openTables.getCompletionRatePercent());
+            result = comparison == 0 ? ConnectionCompletionResultEnum.TIE
+                    : comparison > 0 ? ConnectionCompletionResultEnum.MATCH : ConnectionCompletionResultEnum.OPEN_TABLE;
+        }
+
+        ConnectionCompletionResponseDTO response = new ConnectionCompletionResponseDTO();
+        response.setMatches(matches);
+        response.setOpenTables(openTables);
+        response.setResult(result);
+        return response;
+    }
+
+    // Uses zero for an empty denominator and compares percentages after rounding to two decimals.
+    private ConnectionCompletionStatsResponseDTO toConnectionCompletionStats(ConnectionCompletionProjection row) {
+        ConnectionCompletionStatsResponseDTO stats = new ConnectionCompletionStatsResponseDTO();
+        stats.setTotalConnections(row.getTotalConnections());
+        stats.setCompletedConnections(row.getCompletedConnections());
+        double rate = row.getTotalConnections() == 0 ? 0.0
+                : row.getCompletedConnections().doubleValue() / row.getTotalConnections() * 100.0;
+        stats.setCompletionRatePercent(Math.round(rate * 100.0) / 100.0);
+        return stats;
+    }
+
+    // ================== END BQ 7 ==================
 }

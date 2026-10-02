@@ -2,6 +2,7 @@ package com.backend.gapfinder.repositories;
 
 import com.backend.gapfinder.enums.OpenTableStatusEnum;
 import com.backend.gapfinder.models.OpenTableModel;
+import com.backend.gapfinder.repositories.projections.ConnectionCompletionProjection;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,4 +38,13 @@ public interface OpenTableRepository extends JpaRepository<OpenTableModel, Long>
 
     // Find the open tables with any of the given statuses whose end time is before the given time
     List<OpenTableModel> findByStatusInAndEndTimeBefore(List<OpenTableStatusEnum> statuses, LocalDateTime time);
+
+    // Counts all open tables without date or participant filters; only COMPLETED counts as completed.
+    // Connections that have not ended remain in the denominator, as required by BQ 7.
+    @Query(value = """
+        SELECT COUNT(*) AS "totalConnections",
+               COUNT(*) FILTER (WHERE status = 'COMPLETED') AS "completedConnections"
+        FROM open_tables
+        """, nativeQuery = true)
+    ConnectionCompletionProjection findConnectionCompletionStats();
 }

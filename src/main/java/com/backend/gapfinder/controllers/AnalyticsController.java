@@ -2,6 +2,7 @@ package com.backend.gapfinder.controllers;
 
 import com.backend.gapfinder.dto.responses.BuildingGapPresenceResponseDTO;
 import com.backend.gapfinder.dto.responses.GapCoverageResponseDTO;
+import com.backend.gapfinder.dto.responses.ConnectionCompletionResponseDTO;
 import com.backend.gapfinder.services.AnalyticsService;
 
 import java.util.List;
@@ -39,4 +40,16 @@ public class AnalyticsController {
     }
 
     // ================== END BQ 11 ==================
+
+    // ==================== BQ 7 ====================
+    // Which connection method has the higher completion rate: open tables or matches?
+
+    // GET /analytics/connection-methods/completion
+    // Returns COMPLETED / total for each method across all records, with no date parameters.
+    @GetMapping("/connection-methods/completion")
+    public ConnectionCompletionResponseDTO getConnectionCompletion() {
+        return analyticsService.getConnectionCompletion();
+    }
+
+    // ================== END BQ 7 ==================
 }
