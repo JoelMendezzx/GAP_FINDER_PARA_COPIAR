@@ -1,6 +1,7 @@
 package com.backend.gapfinder.repositories;
 
 import com.backend.gapfinder.models.GapModel;
+import com.backend.gapfinder.repositories.projections.InterestFreeGroupProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -59,5 +60,45 @@ public interface GapRepository extends JpaRepository<GapModel, Long> {
             @Param("to") LocalDateTime to
     );
 
+
+    @Query(value = """
+        WITH slots AS (
+            -- Each gap is cut into the 30-minute slots it fully covers
+            SELECT DISTINCT g.user_id,
+                   EXTRACT(ISODOW FROM s)::int AS day_of_week,
+                   s::time AS slot_start
+            FROM gaps g
+            CROSS JOIN LATERAL generate_series(
+                date_bin('30 minutes', g.start_time - interval '1 microsecond', TIMESTAMP '2000-01-01')
+                    + interval '30 minutes',
+                g.end_time - interval '30 minutes',
+                interval '30 minutes') AS s
+            WHERE g.start_time >= :since AND g.start_time < :until
+        ),
+        groups AS (
+            -- Count students with each interest who are free in each slot
+            SELECT i.id AS interest_id, i.name AS interest_name, sl.day_of_week, sl.slot_start,
+                   COUNT(DISTINCT sl.user_id) AS group_size
+            FROM slots sl
+            JOIN user_interests ui ON ui.user_id = sl.user_id
+            JOIN interests i ON i.id = ui.interest_id
+            GROUP BY i.id, i.name, sl.day_of_week, sl.slot_start
+        ),
+        best AS (
+            -- The largest group of each interest and the slot where it happens
+            SELECT DISTINCT ON (interest_id) interest_id, interest_name, group_size, day_of_week, slot_start
+            FROM groups
+            ORDER BY interest_id, group_size DESC, day_of_week, slot_start
+        )
+        SELECT interest_id AS "interestId", interest_name AS "interestName", group_size AS "largestGroup",
+               day_of_week AS "dayOfWeek", to_char(slot_start, 'HH24:MI') AS "slotStart"
+        FROM best
+        ORDER BY group_size DESC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<InterestFreeGroupProjection> findInterestsWithLargestFreeGroups(
+            @Param("since") LocalDateTime since,
+            @Param("until") LocalDateTime until,
+            @Param("limit") int limit);
 
     }

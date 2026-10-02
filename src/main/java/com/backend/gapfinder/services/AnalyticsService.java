@@ -3,6 +3,8 @@ package com.backend.gapfinder.services;
 import com.backend.gapfinder.dto.OpenTableAbandonmentStatsBasicDTO;
 import com.backend.gapfinder.dto.responses.BuildingGapPresenceResponseDTO;
 import com.backend.gapfinder.dto.responses.GapCoverageResponseDTO;
+import com.backend.gapfinder.dto.responses.InterestFreeGroupResponseDTO;
+import com.backend.gapfinder.enums.DayOfWeekEnum;
 import com.backend.gapfinder.exceptions.NotFoundException;
 import com.backend.gapfinder.repositories.GapRepository;
 import com.backend.gapfinder.repositories.UserLocationLogRepository;
@@ -112,4 +114,33 @@ public class AnalyticsService {
     }
 
     // ================== END BQ 3 TYPE 2 GRUPAL ==================
+
+    // ==================== BQ 13 ====================
+    // Which interests are shared by the largest groups of students who are free at the same time?
+
+    @Transactional(readOnly = true)
+    public List<InterestFreeGroupResponseDTO> getInterestsWithLargestFreeGroups(LocalDateTime since,
+                                                                             LocalDateTime until, int limit) {
+        if (since == null || until == null || !since.isBefore(until)) {
+            throw new IllegalArgumentException("El rango de fechas no es válido");
+        }
+        if (limit <= 0) {
+            throw new IllegalArgumentException("El límite debe ser mayor a 0");
+        }
+        DayOfWeekEnum[] days = DayOfWeekEnum.values();   // MON, TUE, WED, THU, FRI, SAT
+
+        return gapRepository.findInterestsWithLargestFreeGroups(since, until, limit).stream()
+                .map(row -> {
+                    InterestFreeGroupResponseDTO dto = new InterestFreeGroupResponseDTO();
+                    dto.setInterestId(row.getInterestId());
+                    dto.setInterestName(row.getInterestName());
+                    dto.setLargestGroupSize(row.getLargestGroup());
+                    dto.setDayOfWeek(row.getDayOfWeek() <= days.length ? days[row.getDayOfWeek() - 1] : null);
+                    dto.setSlotStart(row.getSlotStart());
+                    return dto;
+                })
+                .toList();
+    }
+
+    // ================== END BQ 13 ==================
 }
